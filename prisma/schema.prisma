@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole { CUSTOMER SELLER ADMIN }
+enum ListingStatus { DRAFT ACTIVE PAUSED SOLD_OUT ARCHIVED }
+enum InventoryStatus { AVAILABLE RESERVED SOLD RETURNED }
+enum Grade { REFURBISHED GRADE_A GRADE_B }
+enum OrderStatus { PENDING_PAYMENT PAID PROCESSING SHIPPED DELIVERED CANCELLED REFUNDED }
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      UserRole @default(CUSTOMER)
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  seller    Seller?
+  orders    Order[]
+}
+
+model Seller {
+  id          String          @id @default(cuid())
+  userId      String          @unique
+  displayName String
+  verified    Boolean         @default(false)
+  user        User            @relation(fields: [userId], references: [id])
+  listings    SellerListing[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Category {
+  id     String         @id @default(cuid())
+  name   String         @unique
+  models CatalogModel[]
+}
+
+model Brand {
+  id     String         @id @default(cuid())
+  name   String         @unique
+  models CatalogModel[]
+}
+
+model CatalogModel {
+  id         String    @id @default(cuid())
+  categoryId String
+  brandId    String
+  name       String
+  slug       String    @unique
+  category   Category  @relation(fields: [categoryId], references: [id])
+  brand      Brand     @relation(fields: [brandId], references: [id])
+  variants   Variant[]
+}
+
+model Variant {
+  id        String          @id @default(cuid())
+  modelId   String
+  storage   String
+  color     String
+  model     CatalogModel    @relation(fields: [modelId], references: [id])
+  listings  SellerListing[]
+  @@unique([modelId, storage, color])
+}
+
+model SellerListing {
+  id             String          @id @default(cuid())
+  sellerId       String
+  variantId      String
+  status         ListingStatus   @default(DRAFT)
+  carrier        String
+  grade          Grade
+  warrantyMonths Int
+  priceCents     Int
+  seller         Seller          @relation(fields: [sellerId], references: [id])
+  variant        Variant         @relation(fields: [variantId], references: [id])
+  inventory      InventoryUnit[]
+  orderLines     OrderLine[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model InventoryUnit {
+  id            String          @id @default(cuid())
+  listingId     String
+  imei          String?         @unique
+  serialNumber  String?         @unique
+  batteryHealth Int?
+  status        InventoryStatus @default(AVAILABLE)
+  listing       SellerListing   @relation(fields: [listingId], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  customerId String
+  status     OrderStatus @default(PENDING_PAYMENT)
+  totalCents Int
+  customer   User        @relation(fields: [customerId], references: [id])
+  lines      OrderLine[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model OrderLine {
+  id          String        @id @default(cuid())
+  orderId     String
+  listingId   String
+  quantity    Int           @default(1)
+  unitPriceCents Int
+  order       Order         @relation(fields: [orderId], references: [id])
+  listing     SellerListing @relation(fields: [listingId], references: [id])
+}
