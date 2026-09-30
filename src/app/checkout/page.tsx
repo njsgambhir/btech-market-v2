@@ -1,7 +1,28 @@
-import { cartTotal, demoCart } from "@/lib/cart";
+"use client";
+
+import { offers } from "@/lib/catalog";
+import { useCart } from "@/components/cart/cart-provider";
 
 export default function CheckoutPage() {
-  const subtotal = cartTotal(demoCart);
+  const { items } = useCart();
+  const lines = items.flatMap((item) => {
+    const offer = offers.find((candidate) => candidate.id === item.offerId);
+    return offer ? [{ ...item, offer }] : [];
+  });
+  const subtotal = lines.reduce((sum, line) => sum + line.offer.price * line.quantity, 0);
+
+  if (!lines.length) {
+    return (
+      <main className="section narrowPage">
+        <p className="eyebrow">SECURE CHECKOUT</p>
+        <h1 className="pageTitle">Checkout</h1>
+        <section className="panel emptyCart">
+          <h2>Your cart is empty.</h2>
+          <a className="button primary" href="/shop">Shop devices</a>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="section narrowPage">
@@ -30,6 +51,12 @@ export default function CheckoutPage() {
         </form>
         <aside className="summaryCard">
           <h2>Summary</h2>
+          {lines.map(({ offer, quantity }) => (
+            <div key={offer.id}>
+              <span>{offer.model} × {quantity}</span>
+              <strong>${(offer.price * quantity).toLocaleString()}</strong>
+            </div>
+          ))}
           <div><span>Merchandise</span><strong>${subtotal.toLocaleString()}</strong></div>
           <div><span>Shipping & taxes</span><span>Calculated before payment</span></div>
           <div className="summaryTotal"><span>Subtotal</span><strong>${subtotal.toLocaleString()}</strong></div>
