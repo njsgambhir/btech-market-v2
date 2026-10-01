@@ -1,17 +1,39 @@
 "use client";
 
-import { offers } from "@/lib/catalog";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
+
+type CheckoutOffer = {
+  id: string;
+  model: string;
+  price: number;
+};
 
 export default function CheckoutPage() {
   const { items } = useCart();
-  const lines = items.flatMap((item) => {
+  const [offers, setOffers] = useState<CheckoutOffer[]>([]);
+
+  useEffect(() => {
+    const ids = items.map((item) => item.offerId);
+    if (!ids.length) {
+      setOffers([]);
+      return;
+    }
+
+    fetch("/api/catalog?ids=" + encodeURIComponent(ids.join(",")))
+      .then((response) => response.ok ? response.json() : [])
+      .then(setOffers)
+      .catch(() => setOffers([]));
+  }, [items]);
+
+  const lines = useMemo(() => items.flatMap((item) => {
     const offer = offers.find((candidate) => candidate.id === item.offerId);
     return offer ? [{ ...item, offer }] : [];
-  });
+  }), [items, offers]);
+
   const subtotal = lines.reduce((sum, line) => sum + line.offer.price * line.quantity, 0);
 
-  if (!lines.length) {
+  if (!items.length) {
     return (
       <main className="section narrowPage">
         <p className="eyebrow">SECURE CHECKOUT</p>
