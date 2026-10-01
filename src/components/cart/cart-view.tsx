@@ -1,17 +1,43 @@
 "use client";
 
-import { offers } from "@/lib/catalog";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "./cart-provider";
+
+type CartOffer = {
+  id: string;
+  brand: string;
+  model: string;
+  storage: string;
+  color: string;
+  grade: string;
+  price: number;
+};
 
 export function CartView() {
   const { items, remove, setQuantity } = useCart();
-  const lines = items.flatMap((item) => {
+  const [offers, setOffers] = useState<CartOffer[]>([]);
+
+  useEffect(() => {
+    const ids = items.map((item) => item.offerId);
+    if (!ids.length) {
+      setOffers([]);
+      return;
+    }
+
+    fetch("/api/catalog?ids=" + encodeURIComponent(ids.join(",")))
+      .then((response) => response.ok ? response.json() : [])
+      .then(setOffers)
+      .catch(() => setOffers([]));
+  }, [items]);
+
+  const lines = useMemo(() => items.flatMap((item) => {
     const offer = offers.find((candidate) => candidate.id === item.offerId);
     return offer ? [{ ...item, offer }] : [];
-  });
+  }), [items, offers]);
+
   const subtotal = lines.reduce((sum, line) => sum + line.offer.price * line.quantity, 0);
 
-  if (!lines.length) {
+  if (!items.length) {
     return <section className="panel emptyCart"><h2>Your cart is empty.</h2><a className="button primary" href="/shop">Shop devices</a></section>;
   }
 
