@@ -6,6 +6,7 @@ type CartItem = { offerId: string; quantity: number };
 type CartContextValue = {
   items: CartItem[];
   count: number;
+  ready: boolean;
   add: (offerId: string) => void;
   remove: (offerId: string) => void;
   setQuantity: (offerId: string, quantity: number) => void;
@@ -36,6 +37,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<CartContextValue>(() => ({
     items,
     count: items.reduce((sum, item) => sum + item.quantity, 0),
+    ready,
     add: (offerId) => setItems((current) => {
       const found = current.find((item) => item.offerId === offerId);
       return found
@@ -48,7 +50,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         : current.map((item) => item.offerId === offerId ? { ...item, quantity } : item)
     ),
     clear: () => setItems([]),
-  }), [items]);
+  }), [items, ready]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
