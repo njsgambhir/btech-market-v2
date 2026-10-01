@@ -1,8 +1,10 @@
-import { offers } from "@/lib/catalog";
+import { getOffers } from "@/lib/catalog";
+
+export const dynamic = "force-dynamic";
 
 export default async function Shop({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const params = await searchParams;
-  const visible = params.category ? offers.filter((o) => o.category === params.category) : offers;
+  const visible = await getOffers(params.category);
 
   return (
     <main className="section">
@@ -14,7 +16,7 @@ export default async function Shop({ searchParams }: { searchParams: Promise<{ c
           <label>Brand<select><option>All brands</option><option>Apple</option><option>Samsung</option></select></label>
           <label>Condition<select><option>All grades</option><option>Refurbished</option><option>Grade A</option><option>Grade B</option></select></label>
           <label>Network<select><option>Any network</option><option>Unlocked</option></select></label>
-          <p>Interactive filtering will be connected to the database in the next implementation step.</p>
+          <p>Live marketplace inventory is now loaded from the development database. Interactive filters come next.</p>
         </aside>
         <section>
           <div className="resultsBar"><strong>{visible.length} offers</strong><span>Verified marketplace inventory</span></div>
