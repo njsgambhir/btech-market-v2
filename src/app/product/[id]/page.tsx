@@ -2,9 +2,11 @@ import { getOffer } from "@/lib/catalog";
 import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 
+export const dynamic = "force-dynamic";
+
 export default async function Product({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const offer = getOffer(id);
+  const offer = await getOffer(id);
   if (!offer) notFound();
   return (
     <main className="section productPage">
@@ -18,7 +20,7 @@ export default async function Product({ params }: { params: Promise<{ id: string
           <div><span>Warranty</span><strong>{offer.warrantyMonths} months</strong></div><div><span>Seller</span><strong>{offer.seller}</strong></div>
         </div>
         <AddToCartButton offerId={offer.id} />
-        <p className="finePrint">Cart contents are now retained in this browser. Server-side inventory reservation will be added with checkout.</p>
+        <p className="finePrint">Cart contents are retained in this browser. Server-side inventory reservation will be added with checkout.</p>
       </section>
     </main>
   );
