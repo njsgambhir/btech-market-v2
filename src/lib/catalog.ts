@@ -1,4 +1,5 @@
-export type Grade = "Refurbished" | "Grade A" | "Grade B";
+import { Grade } from "@prisma/client";
+import { db } from "@/lib/db";
 
 export type MarketplaceOffer = {
   id: string;
@@ -8,20 +9,60 @@ export type MarketplaceOffer = {
   storage: string;
   color: string;
   carrier: string;
-  grade: Grade;
+  grade: "Refurbished" | "Grade A" | "Grade B";
   warrantyMonths: number;
   seller: string;
   price: number;
   batteryHealth: number;
 };
 
-export const offers: MarketplaceOffer[] = [
-  { id:"iphone-15-pro-256-black-a", model:"iPhone 15 Pro", brand:"Apple", category:"iPhone", storage:"256 GB", color:"Black Titanium", carrier:"Unlocked", grade:"Grade A", warrantyMonths:12, seller:"Btech Verified", price:899, batteryHealth:92 },
-  { id:"iphone-14-128-blue-a", model:"iPhone 14", brand:"Apple", category:"iPhone", storage:"128 GB", color:"Blue", carrier:"Unlocked", grade:"Grade A", warrantyMonths:12, seller:"Mobile Renew", price:579, batteryHealth:90 },
-  { id:"galaxy-s24-256-black-a", model:"Galaxy S24", brand:"Samsung", category:"Samsung", storage:"256 GB", color:"Onyx Black", carrier:"Unlocked", grade:"Grade A", warrantyMonths:12, seller:"Btech Verified", price:699, batteryHealth:94 },
-  { id:"ipad-air-5-64-space-gray-ref", model:"iPad Air (5th gen)", brand:"Apple", category:"iPad", storage:"64 GB", color:"Space Gray", carrier:"Wi-Fi", grade:"Refurbished", warrantyMonths:12, seller:"TechCycle", price:499, batteryHealth:91 }
-];
+function displayGrade(grade: Grade): MarketplaceOffer["grade"] {
+  if (grade === Grade.GRADE_A) return "Grade A";
+  if (grade === Grade.GRADE_B) return "Grade B";
+  return "Refurbished";
+}
 
-export function getOffer(id: string) {
-  return offers.find((offer) => offer.id === id);
+const include = {
+  seller: true,
+  variant: { include: { model: { include: { brand: true, category: true } } } },
+  inventory: { where: { status: "AVAILABLE" as const }, orderBy: { createdAt: "asc" as const } },
+};
+
+function toOffer(listing: any): MarketplaceOffer {
+  const unit = listing.inventory[0];
+  return {
+    id: listing.id,
+    model: listing.variant.model.name,
+    brand: listing.variant.model.brand.name,
+    category: listing.variant.model.category.name,
+    storage: listing.variant.storage,
+    color: listing.variant.color,
+    carrier: listing.carrier,
+    grade: displayGrade(listing.grade),
+    warrantyMonths: listing.warrantyMonths,
+    seller: listing.seller.displayName,
+    price: listing.priceCents / 100,
+    batteryHealth: unit?.batteryHealth ?? 0,
+  };
+}
+
+export async function getOffers(category?: string) {
+  const listings = await db.sellerListing.findMany({
+    where: {
+      status: "ACTIVE",
+      ...(category ? { variant: { model: { category: { name: category } } } } : {}),
+      inventory: { some: { status: "AVAILABLE" } },
+    },
+    include,
+    orderBy: { createdAt: "asc" },
+  });
+  return listings.map(toOffer);
+}
+
+export async function getOffer(id: string) {
+  const listing = await db.sellerListing.findFirst({
+    where: { id, status: "ACTIVE", inventory: { some: { status: "AVAILABLE" } } },
+    include,
+  });
+  return listing ? toOffer(listing) : undefined;
 }
