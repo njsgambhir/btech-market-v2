@@ -1,0 +1,20 @@
+-- AlterTable
+ALTER TABLE "InventoryUnit"
+ADD COLUMN "orderLineId" TEXT,
+ADD COLUMN "reservedUntil" TIMESTAMP(3);
+
+-- AlterTable
+ALTER TABLE "Order"
+ADD COLUMN "email" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "firstName" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "lastName" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "address" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "city" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "postalCode" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "country" TEXT NOT NULL DEFAULT '';
+
+-- AddForeignKey
+ALTER TABLE "InventoryUnit"
+ADD CONSTRAINT "InventoryUnit_orderLineId_fkey"
+FOREIGN KEY ("orderLineId") REFERENCES "OrderLine"("id")
+ON DELETE SET NULL ON UPDATE CASCADE;
