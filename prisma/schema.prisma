@@ -125,7 +125,10 @@ model InventoryUnit {
   serialNumber String? @unique
   batteryHealth Int?
   status       InventoryStatus @default(AVAILABLE)
+  orderLineId  String?
+  reservedUntil DateTime?
   listing      SellerListing @relation(fields: [listingId], references: [id])
+  orderLine    OrderLine? @relation(fields: [orderLineId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -135,6 +138,13 @@ model Order {
   customerId  String
   status      OrderStatus @default(PENDING_PAYMENT)
   totalCents  Int
+  email       String
+  firstName   String
+  lastName    String
+  address     String
+  city        String
+  postalCode  String
+  country     String
   customer    User @relation(fields: [customerId], references: [id])
   lines       OrderLine[]
   createdAt   DateTime @default(now())
@@ -149,4 +159,5 @@ model OrderLine {
   unitPriceCents Int
   order          Order @relation(fields: [orderId], references: [id])
   listing        SellerListing @relation(fields: [listingId], references: [id])
+  inventory      InventoryUnit[]
 }
