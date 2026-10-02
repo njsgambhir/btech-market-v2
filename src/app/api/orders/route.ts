@@ -43,6 +43,19 @@ export async function POST(request: NextRequest) {
       });
 
       const requestedIds = items.map((item) => item.offerId as string);
+      // Make expired reservations available again before checking stock.
+      await tx.inventoryUnit.updateMany({
+        where: {
+          status: InventoryStatus.RESERVED,
+          reservedUntil: { lte: new Date() },
+        },
+        data: {
+          status: InventoryStatus.AVAILABLE,
+          orderLineId: null,
+          reservedUntil: null,
+        },
+      });
+
       const listings = await tx.sellerListing.findMany({
         where: { id: { in: requestedIds }, status: "ACTIVE" },
         include: { inventory: { where: { status: InventoryStatus.AVAILABLE }, orderBy: { createdAt: "asc" } } },
