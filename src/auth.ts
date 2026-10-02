@@ -6,7 +6,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Use the stable production auth endpoint as the OAuth callback proxy so
   // Vercel preview deployment hostnames can change without breaking GitHub OAuth.
   redirectProxyUrl: process.env.AUTH_REDIRECT_PROXY_URL,
-  providers: [GitHub],
+  providers: [
+    GitHub({
+      // The redirect proxy carries the original preview origin in OAuth state.
+      // Using state avoids a PKCE verifier cookie that would otherwise be scoped
+      // to the preview hostname and unavailable on the stable callback hostname.
+      checks: ["state"],
+    }),
+  ],
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token }) {
