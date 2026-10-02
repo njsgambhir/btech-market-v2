@@ -19,7 +19,7 @@ export default async function AccountPage() {
               "use server";
               await signIn("github", { redirectTo: "/account" });
             }}>
-              <button className="buyButton" type="submit">Continue with GitHub</button>
+              <button className="buyButton" type="submit">Continue with GitHub — Development</button>
             </form>
           </section>
           <section className="panel accountIntro">
