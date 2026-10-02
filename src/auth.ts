@@ -3,6 +3,9 @@ import GitHub from "next-auth/providers/github";
 import { db } from "@/lib/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Use the stable production auth endpoint as the OAuth callback proxy so
+  // Vercel preview deployment hostnames can change without breaking GitHub OAuth.
+  redirectProxyUrl: process.env.AUTH_REDIRECT_PROXY_URL,
   providers: [GitHub],
   session: { strategy: "jwt" },
   callbacks: {
