@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/cart-provider";
 
 type CheckoutOffer = { id: string; model: string; price: number };
+type AccountProfile = {
+  authenticated: boolean;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+};
 
 export default function CheckoutPage() {
   const { items, clear } = useCart();
@@ -13,6 +19,14 @@ export default function CheckoutPage() {
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [account, setAccount] = useState<AccountProfile>({ authenticated: false });
+
+  useEffect(() => {
+    fetch("/api/account")
+      .then((response) => response.ok ? response.json() : { authenticated: false })
+      .then(setAccount)
+      .catch(() => setAccount({ authenticated: false }));
+  }, []);
 
   useEffect(() => {
     const ids = items.map((item) => item.offerId);
@@ -87,11 +101,23 @@ export default function CheckoutPage() {
       <div className="checkoutLayout">
         <form className="panel checkoutForm" onSubmit={submitOrder}>
           <h2>Contact</h2>
-          <label>Email<input name="email" type="email" placeholder="you@example.com" required /></label>
+          <label>
+            Email
+            <input
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+              defaultValue={account.email ?? ""}
+              key={account.email ?? "guest"}
+              readOnly={account.authenticated}
+              required
+            />
+          </label>
+          {account.authenticated ? <p>Signed in. This order will be linked to your Btech account.</p> : null}
           <h2>Delivery address</h2>
           <div className="formGrid">
-            <label>First name<input name="firstName" required /></label>
-            <label>Last name<input name="lastName" required /></label>
+            <label>First name<input name="firstName" defaultValue={account.firstName ?? ""} key={"first-" + (account.firstName ?? "")} required /></label>
+            <label>Last name<input name="lastName" defaultValue={account.lastName ?? ""} key={"last-" + (account.lastName ?? "")} required /></label>
           </div>
           <label>Address<input name="address" required /></label>
           <div className="formGrid">
