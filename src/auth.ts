@@ -18,18 +18,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token }) {
       if (token.email) {
-        const user = await db.user.findUnique({
-          where: { email: token.email.toLowerCase() },
-          select: { role: true },
+        const email = token.email.toLowerCase();
+        const user = await db.user.upsert({
+          where: { email },
+          update: {},
+          create: {
+            email,
+            firstName: typeof token.name === "string" ? token.name : undefined,
+          },
+          select: { id: true, role: true },
         });
-        token.role = user?.role ?? "CUSTOMER";
+
+        // Orders created by guest checkout already point at the User row that
+        // checkout upserts by email. Keep this repair step for older dev data.
+        await db.order.updateMany({
+          where: { email, customerId: { not: user.id } },
+          data: { customerId: user.id },
+        });
+
+        token.userId = user.id;
+        token.role = user.role;
       } else if (!token.role) {
         token.role = "CUSTOMER";
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) session.user.role = String(token.role ?? "CUSTOMER");
+      if (session.user) {
+        session.user.id = String(token.userId ?? token.sub ?? "");
+        session.user.role = String(token.role ?? "CUSTOMER");
+      }
       return session;
     },
   },
