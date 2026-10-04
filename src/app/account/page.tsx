@@ -33,6 +33,7 @@ export default async function AccountPage() {
   }
 
   const email = session.user.email.toLowerCase();
+  const customer = await db.user.findUnique({ where: { email }, select: { id: true, firstName: true } });
   // Release inventory held by expired unpaid orders before showing order history.
   const now = new Date();
   const expiredUnits = await db.inventoryUnit.findMany({
@@ -54,7 +55,7 @@ export default async function AccountPage() {
   }
 
   const orders = await db.order.findMany({
-    where: { email },
+    where: customer?.id ? { customerId: customer.id } : { email },
     orderBy: { createdAt: "desc" },
     include: {
       lines: {
@@ -66,7 +67,7 @@ export default async function AccountPage() {
   return (
     <main className="section narrowPage">
       <p className="eyebrow">BTECH ACCOUNT</p>
-      <h1 className="pageTitle">Welcome back{session.user.name ? ", " + session.user.name : ""}.</h1>
+      <h1 className="pageTitle">Welcome back{customer?.firstName ? ", " + customer.firstName : ""}.</h1>
       <section className="panel">
         <p><strong>{session.user.email}</strong></p>
         <p>Account role: {session.user.role}</p>
