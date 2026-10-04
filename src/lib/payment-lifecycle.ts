@@ -18,7 +18,14 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
     if (!payment) throw new Error("PAYMENT_NOT_FOUND");
 
     // Webhooks may be delivered more than once. A completed payment is idempotent.
-    if (payment.status === PaymentStatus.SUCCEEDED) return payment;
+    if (payment.status === PaymentStatus.SUCCEEDED) {
+      return {
+        completed: payment,
+        email: payment.order.email,
+        orderId: payment.orderId,
+        shouldNotify: false,
+      };
+    }
 
     if (payment.order.status !== OrderStatus.PENDING_PAYMENT) {
       throw new Error("ORDER_NOT_PAYABLE");
@@ -58,10 +65,17 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
       },
     });
 
-    return { completed, email: payment.order.email, orderId: payment.orderId };
+    return {
+      completed,
+      email: payment.order.email,
+      orderId: payment.orderId,
+      shouldNotify: true,
+    };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-  await notifyBuyer({ event: "PAYMENT_RECEIVED", orderId: result.orderId, email: result.email });
+  if (result.shouldNotify) {
+    await notifyBuyer({ event: "PAYMENT_RECEIVED", orderId: result.orderId, email: result.email });
+  }
   return result.completed;
 }
 
