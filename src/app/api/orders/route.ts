@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { expirePendingReservationsInTransaction } from "@/lib/order-lifecycle";
+import { notifyBuyer } from "@/lib/notification-events";
 
 type CheckoutBody = {
   email?: string;
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
       return created;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
+    await notifyBuyer({ event: "ORDER_CREATED", orderId: order.id, email: order.email });
     return NextResponse.json({ orderId: order.id }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "INVENTORY") {
