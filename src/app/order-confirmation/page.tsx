@@ -23,7 +23,10 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
       },
     },
   });
-  if (!order) notFound();\n\n  // Signed-in customers may only view their own order confirmation.\n  if (session?.user?.id && order.customerId !== session.user.id) notFound();
+  if (!order) notFound();
+
+  // Signed-in customers may only view their own order confirmation.
+  if (session?.user?.id && order.customerId !== session.user.id) notFound();
 
   const reservedUntil = order.lines
     .flatMap((line) => line.inventory)
