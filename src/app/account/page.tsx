@@ -89,7 +89,7 @@ export default async function AccountPage() {
           </div>
         ) : orders.map((order) => (
           <article className="panel" style={{ marginTop: "16px" }} key={order.id}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "32px", width: "100%" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "48px", flexWrap: "wrap" }}>
               <span>Order {order.id.slice(-8).toUpperCase()}</span>
               <strong>{ "US$" + (order.totalCents / 100).toLocaleString() }</strong>
             </div>
