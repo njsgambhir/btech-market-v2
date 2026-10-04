@@ -9,6 +9,9 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
   const { order: orderId } = await searchParams;
   if (!orderId) notFound();
 
+  const session = await auth();
+  await expirePendingReservations();
+
   const order = await db.order.findUnique({
     where: { id: orderId },
     include: {
