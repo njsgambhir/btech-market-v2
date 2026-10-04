@@ -134,10 +134,10 @@ export default function CheckoutPage() {
         </form>
         <aside className="summaryCard">
           <h2>Summary</h2>
-          {lines.map(({ offer, quantity }) => <div key={offer.id}><span>{offer.model} × {quantity}</span><strong>{ "$" + (offer.price * quantity).toLocaleString() }</strong></div>)}
-          <div><span>Merchandise</span><strong>{ "$" + subtotal.toLocaleString() }</strong></div>
+          {lines.map(({ offer, quantity }) => <div key={offer.id}><span>{offer.model} × {quantity}</span><strong>{ "US$" + (offer.price * quantity).toLocaleString() }</strong></div>)}
+          <div><span>Merchandise</span><strong>{ "US$" + subtotal.toLocaleString() }</strong></div>
           <div><span>Shipping & taxes</span><span>Calculated before payment</span></div>
-          <div className="summaryTotal"><span>Subtotal</span><strong>{ "$" + subtotal.toLocaleString() }</strong></div>
+          <div className="summaryTotal"><span>Subtotal</span><strong>{ "US$" + subtotal.toLocaleString() }</strong></div>
         </aside>
       </div>
     </main>
