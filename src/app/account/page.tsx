@@ -33,6 +33,26 @@ export default async function AccountPage() {
   }
 
   const email = session.user.email.toLowerCase();
+  // Release inventory held by expired unpaid orders before showing order history.
+  const now = new Date();
+  const expiredUnits = await db.inventoryUnit.findMany({
+    where: { status: "RESERVED", reservedUntil: { lte: now } },
+    select: { orderLine: { select: { orderId: true } } },
+  });
+  const expiredOrderIds = [...new Set(expiredUnits.flatMap((unit) => unit.orderLine?.orderId ? [unit.orderLine.orderId] : []))];
+  if (expiredOrderIds.length) {
+    await db.$transaction([
+      db.inventoryUnit.updateMany({
+        where: { status: "RESERVED", reservedUntil: { lte: now } },
+        data: { status: "AVAILABLE", orderLineId: null, reservedUntil: null },
+      }),
+      db.order.updateMany({
+        where: { id: { in: expiredOrderIds }, status: "PENDING_PAYMENT" },
+        data: { status: "CANCELLED" },
+      }),
+    ]);
+  }
+
   const orders = await db.order.findMany({
     where: { email },
     orderBy: { createdAt: "desc" },
