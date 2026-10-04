@@ -2,6 +2,7 @@ import { InventoryStatus, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
+import { expirePendingReservationsInTransaction } from "@/lib/order-lifecycle";
 
 type CheckoutBody = {
   email?: string;
@@ -47,18 +48,8 @@ export async function POST(request: NextRequest) {
       });
 
       const requestedIds = items.map((item) => item.offerId as string);
-      // Make expired reservations available again before checking stock.
-      await tx.inventoryUnit.updateMany({
-        where: {
-          status: InventoryStatus.RESERVED,
-          reservedUntil: { lte: new Date() },
-        },
-        data: {
-          status: InventoryStatus.AVAILABLE,
-          orderLineId: null,
-          reservedUntil: null,
-        },
-      });
+      // Clean up abandoned unpaid reservations before checking stock.
+      await expirePendingReservationsInTransaction(tx);
 
       const listings = await tx.sellerListing.findMany({
         where: { id: { in: requestedIds }, status: "ACTIVE" },
