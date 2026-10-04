@@ -1,0 +1,75 @@
+import { InventoryStatus, OrderStatus, PaymentStatus, Prisma } from "@prisma/client";
+import { db } from "@/lib/db";
+
+export async function markPaymentSucceeded(paymentId: string, providerPaymentId?: string) {
+  return db.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        order: {
+          include: {
+            lines: { include: { inventory: true } },
+          },
+        },
+      },
+    });
+
+    if (!payment) throw new Error("PAYMENT_NOT_FOUND");
+
+    // Webhooks may be delivered more than once. A completed payment is idempotent.
+    if (payment.status === PaymentStatus.SUCCEEDED) return payment;
+
+    if (payment.order.status !== OrderStatus.PENDING_PAYMENT) {
+      throw new Error("ORDER_NOT_PAYABLE");
+    }
+
+    if (payment.amountCents !== payment.order.totalCents || payment.currency !== "USD") {
+      throw new Error("PAYMENT_AMOUNT_MISMATCH");
+    }
+
+    const units = payment.order.lines.flatMap((line) => line.inventory);
+    if (!units.length || units.some((unit) => unit.status !== InventoryStatus.RESERVED)) {
+      throw new Error("INVENTORY_NOT_RESERVED");
+    }
+
+    const now = new Date();
+    if (units.some((unit) => !unit.reservedUntil || unit.reservedUntil <= now)) {
+      throw new Error("RESERVATION_EXPIRED");
+    }
+
+    await tx.inventoryUnit.updateMany({
+      where: { id: { in: units.map((unit) => unit.id) }, status: InventoryStatus.RESERVED },
+      data: { status: InventoryStatus.SOLD, reservedUntil: null },
+    });
+
+    await tx.order.update({
+      where: { id: payment.orderId },
+      data: { status: OrderStatus.PAID },
+    });
+
+    return tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.SUCCEEDED,
+        providerPaymentId: providerPaymentId ?? payment.providerPaymentId,
+        failureCode: null,
+        failureMessage: null,
+      },
+    });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
+export async function markPaymentFailed(
+  paymentId: string,
+  failureCode?: string,
+  failureMessage?: string,
+) {
+  return db.payment.update({
+    where: { id: paymentId },
+    data: {
+      status: PaymentStatus.FAILED,
+      failureCode,
+      failureMessage,
+    },
+  });
+}
