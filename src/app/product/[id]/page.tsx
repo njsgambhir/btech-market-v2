@@ -13,7 +13,7 @@ export default async function Product({ params }: { params: Promise<{ id: string
       <div className="productHeroVisual"><span>{offer.brand}</span><strong>{offer.model}</strong></div>
       <section className="productDetails">
         <p className="eyebrow">{offer.grade} · VERIFIED OFFER</p>
-        <h1 className="productTitle">{offer.model}</h1><p className="productPrice">${offer.price.toLocaleString()}</p>
+        <h1 className="productTitle">{offer.model}</h1><p className="productPrice">US${offer.price.toLocaleString()}</p>
         <div className="specGrid">
           <div><span>Storage</span><strong>{offer.storage}</strong></div><div><span>Colour</span><strong>{offer.color}</strong></div>
           <div><span>Network</span><strong>{offer.carrier}</strong></div><div><span>Battery health</span><strong>{offer.batteryHealth}%</strong></div>
