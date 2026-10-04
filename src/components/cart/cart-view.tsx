@@ -57,16 +57,16 @@ export function CartView() {
               </label>
               <button className="textButton" type="button" onClick={() => remove(offer.id)}>Remove</button>
             </div>
-            <strong>${(offer.price * quantity).toLocaleString()}</strong>
+            <strong>US${(offer.price * quantity).toLocaleString()}</strong>
           </article>
         ))}
       </section>
       <aside className="summaryCard">
         <h2>Order summary</h2>
-        <div><span>Subtotal</span><strong>${subtotal.toLocaleString()}</strong></div>
+        <div><span>Subtotal</span><strong>US${subtotal.toLocaleString()}</strong></div>
         <div><span>Shipping</span><span>Calculated at checkout</span></div>
         <div><span>Taxes</span><span>Calculated at checkout</span></div>
-        <div className="summaryTotal"><span>Estimated total</span><strong>${subtotal.toLocaleString()}</strong></div>
+        <div className="summaryTotal"><span>Estimated total</span><strong>US${subtotal.toLocaleString()}</strong></div>
         <a className="button primary fullButton" href="/checkout">Continue to checkout</a>
       </aside>
     </div>
