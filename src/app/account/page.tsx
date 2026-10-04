@@ -90,7 +90,7 @@ export default async function AccountPage() {
           <article className="panel" style={{ marginTop: "16px" }} key={order.id}>
             <div className="summaryTotal">
               <span>Order {order.id.slice(-8).toUpperCase()}</span>
-              <strong>{ "$" + (order.totalCents / 100).toLocaleString() }</strong>
+              <strong>{ "US$" + (order.totalCents / 100).toLocaleString() }</strong>
             </div>
             <p>{order.status.replaceAll("_", " ")} · {order.createdAt.toLocaleDateString()}</p>
             {order.lines.map((line) => (
