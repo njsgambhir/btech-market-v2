@@ -34,6 +34,15 @@ enum Grade {
   GRADE_B
 }
 
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
 enum OrderStatus {
   PENDING_PAYMENT
   PAID
@@ -160,4 +169,23 @@ model OrderLine {
   order          Order @relation(fields: [orderId], references: [id])
   listing        SellerListing @relation(fields: [listingId], references: [id])
   inventory      InventoryUnit[]
+}
+
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String
+  provider          String
+  providerPaymentId String?       @unique
+  amountCents       Int
+  currency          String        @default("USD")
+  status            PaymentStatus @default(PENDING)
+  failureCode       String?
+  failureMessage    String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  order             Order         @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([status])
 }
