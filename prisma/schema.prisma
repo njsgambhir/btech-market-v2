@@ -154,6 +154,10 @@ model Order {
   city        String
   postalCode  String
   country     String
+  carrier     String?
+  trackingNumber String?
+  shippedAt   DateTime?
+  deliveredAt DateTime?
   customer    User @relation(fields: [customerId], references: [id])
   lines       OrderLine[]
   payments    Payment[]
