@@ -42,13 +42,13 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
               <strong>{line.listing.variant.model.name}</strong>
               <p>{line.listing.variant.storage} · {line.listing.variant.color} × {line.quantity}</p>
             </div>
-            <strong>{ "$" + ((line.unitPriceCents * line.quantity) / 100).toLocaleString() }</strong>
+            <strong>{ "US$" + ((line.unitPriceCents * line.quantity) / 100).toLocaleString() }</strong>
           </div>
         ))}
         <div className="summaryCard" style={{ marginTop: "24px" }}>
           <div className="summaryTotal">
             <span>Order subtotal</span>
-            <strong>{ "$" + (order.totalCents / 100).toLocaleString() }</strong>
+            <strong>{ "US$" + (order.totalCents / 100).toLocaleString() }</strong>
           </div>
         </div>
         <p><strong>Delivery to</strong><br />{order.address}<br />{order.city}, {order.postalCode}<br />{order.country}</p>
