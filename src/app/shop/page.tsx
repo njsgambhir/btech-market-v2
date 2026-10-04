@@ -28,7 +28,7 @@ export default async function Shop({ searchParams }: { searchParams: Promise<{ c
                   <span className="productMeta">{offer.grade} · {offer.storage}</span>
                   <h2>{offer.model}</h2>
                   <span>{offer.color} · {offer.carrier}</span>
-                  <strong className="price">${offer.price.toLocaleString()}</strong>
+                  <strong className="price">US${offer.price.toLocaleString()}</strong>
                   <span>{offer.warrantyMonths}-month warranty</span>
                 </div>
               </a>
