@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { notifyBuyer } from "@/lib/notification-events";
 
 export async function markPaymentSucceeded(paymentId: string, providerPaymentId?: string) {
-  return db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx) => {
     const payment = await tx.payment.findUnique({
       where: { id: paymentId },
       include: {
@@ -59,10 +59,10 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
     });
 
     return { completed, email: payment.order.email, orderId: payment.orderId };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }).then(async ({ completed, email, orderId }) => {
-    await notifyBuyer({ event: "PAYMENT_RECEIVED", orderId, email });
-    return completed;
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  await notifyBuyer({ event: "PAYMENT_RECEIVED", orderId: result.orderId, email: result.email });
+  return result.completed;
 }
 
 export async function markPaymentFailed(
