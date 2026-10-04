@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { auth } from "@/auth";
+import { expirePendingReservations } from "@/lib/order-lifecycle";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,7 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
       },
     },
   });
-  if (!order) notFound();
+  if (!order) notFound();\n\n  // Signed-in customers may only view their own order confirmation.\n  if (session?.user?.id && order.customerId !== session.user.id) notFound();
 
   const reservedUntil = order.lines
     .flatMap((line) => line.inventory)
@@ -31,7 +33,7 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
       <p className="eyebrow">ORDER RESERVED</p>
       <h1 className="pageTitle">Thank you, {order.firstName}.</h1>
       <section className="panel">
-        <h2>Order {order.id.slice(-8).toUpperCase()}</h2>
+        <h2>Order # {order.id.slice(-8).toUpperCase()}</h2>
         <p>
           Your development order has been created. No payment has been charged.
           {reservedUntil ? <> Inventory is reserved until {reservedUntil.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.</> : null}
