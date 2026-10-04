@@ -1,6 +1,7 @@
 import { InventoryStatus, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { auth } from "@/auth";
 
 type CheckoutBody = {
   email?: string;
@@ -21,7 +22,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid checkout request." }, { status: 400 });
   }
 
-  const email = body.email?.trim().toLowerCase();
+  const session = await auth();
+  // A signed-in customer must always check out with the authenticated email.
+  // The browser field is read-only for convenience, but authorization is enforced here.
+  const email = session?.user?.email?.toLowerCase() ?? body.email?.trim().toLowerCase();
   const firstName = body.firstName?.trim();
   const lastName = body.lastName?.trim();
   const address = body.address?.trim();
