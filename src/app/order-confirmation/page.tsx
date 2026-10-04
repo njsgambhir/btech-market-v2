@@ -37,14 +37,16 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
 
   return (
     <main className="section narrowPage">
-      <p className="eyebrow">ORDER RESERVED</p>
+      <p className="eyebrow">{order.status === "PAID" ? "ORDER CONFIRMED" : "ORDER RESERVED"}</p>
       <h1 className="pageTitle">Thank you, {order.firstName}.</h1>
       <section className="panel">
         <h2>Order # {order.id.slice(-8).toUpperCase()}</h2>
-        <p>
-          Your development order has been created. No payment has been charged.
-          {reservedUntil ? <> Inventory is reserved until {reservedUntil.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.</> : null}
-        </p>
+        {order.status === "PENDING_PAYMENT" ? (
+          <p>
+            Your order has been created. No payment has been charged.
+            {reservedUntil ? <> Inventory is reserved until {reservedUntil.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.</> : null}
+          </p>
+        ) : null}
         {order.lines.map((line) => (
           <div className="cartLine" key={line.id}>
             <div>
@@ -61,7 +63,7 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
           </div>
         </div>
         {order.status === "PENDING_PAYMENT" && session?.user?.id === order.customerId ? <TestPaymentButton orderId={order.id} /> : null}
-        {order.status === "PAID" ? <p><strong>Payment received.</strong> Your order is now paid and the device is allocated to this order.</p> : null}
+        {order.status === "PAID" ? <p><strong>Payment received.</strong> Your order is confirmed and the device has been allocated to your order.</p> : null}
         <p><strong>Delivery to</strong><br />{order.address}<br />{order.city}, {order.postalCode}<br />{order.country}</p>
         <a className="button primary" href="/shop">Continue shopping</a>
       </section>
