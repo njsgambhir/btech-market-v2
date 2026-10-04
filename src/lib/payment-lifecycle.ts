@@ -1,5 +1,6 @@
 import { InventoryStatus, OrderStatus, PaymentStatus, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { notifyBuyer } from "@/lib/notification-events";
 
 export async function markPaymentSucceeded(paymentId: string, providerPaymentId?: string) {
   return db.$transaction(async (tx) => {
@@ -47,7 +48,7 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
       data: { status: OrderStatus.PAID },
     });
 
-    return tx.payment.update({
+    const completed = await tx.payment.update({
       where: { id: payment.id },
       data: {
         status: PaymentStatus.SUCCEEDED,
@@ -56,7 +57,12 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
         failureMessage: null,
       },
     });
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    return { completed, email: payment.order.email, orderId: payment.orderId };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }).then(async ({ completed, email, orderId }) => {
+    await notifyBuyer({ event: "PAYMENT_RECEIVED", orderId, email });
+    return completed;
+  });
 }
 
 export async function markPaymentFailed(
