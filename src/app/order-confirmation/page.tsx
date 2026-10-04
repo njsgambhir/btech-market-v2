@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { expirePendingReservations } from "@/lib/order-lifecycle";
 import { TestPaymentButton } from "@/components/payments/test-payment-button";
+import { TestFulfillmentControls } from "@/components/fulfillment/test-fulfillment-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,12 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
         </div>
         {order.status === "PENDING_PAYMENT" && session?.user?.id === order.customerId ? <TestPaymentButton orderId={order.id} /> : null}
         {order.status === "PAID" ? <p><strong>Payment received.</strong> Your order is confirmed and the device has been allocated to your order.</p> : null}
+        {order.status === "PROCESSING" ? <p><strong>Processing.</strong> Your order is being prepared for shipment.</p> : null}
+        {order.status === "SHIPPED" ? <p><strong>Shipped.</strong> {order.carrier} tracking: {order.trackingNumber}</p> : null}
+        {order.status === "DELIVERED" ? <p><strong>Delivered.</strong> Your order has been delivered.</p> : null}
+        {session?.user?.id === order.customerId && (order.status === "PAID" || order.status === "PROCESSING" || order.status === "SHIPPED") ? (
+          <TestFulfillmentControls orderId={order.id} status={order.status} />
+        ) : null}
         <p><strong>Delivery to</strong><br />{order.address}<br />{order.city}, {order.postalCode}<br />{order.country}</p>
         <a className="button primary" href="/shop">Continue shopping</a>
       </section>
