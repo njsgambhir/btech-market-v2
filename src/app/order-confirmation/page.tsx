@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { expirePendingReservations } from "@/lib/order-lifecycle";
+import { TestPaymentButton } from "@/components/payments/test-payment-button";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,8 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
             <strong>{ "US$" + (order.totalCents / 100).toLocaleString() }</strong>
           </div>
         </div>
+        {order.status === "PENDING_PAYMENT" && session?.user?.id === order.customerId ? <TestPaymentButton orderId={order.id} /> : null}
+        {order.status === "PAID" ? <p><strong>Payment received.</strong> Your order is now paid and the device is allocated to this order.</p> : null}
         <p><strong>Delivery to</strong><br />{order.address}<br />{order.city}, {order.postalCode}<br />{order.country}</p>
         <a className="button primary" href="/shop">Continue shopping</a>
       </section>
