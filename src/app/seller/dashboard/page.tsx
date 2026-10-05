@@ -15,18 +15,12 @@ export default async function Dashboard() {
   if (!isAdmin && !seller) redirect("/account");
 
   const sellerId = seller?.id;
-  const listingWhere = sellerId ? { sellerId, status: "ACTIVE" as const } : { status: "ACTIVE" as const };
-  const inventoryWhere = sellerId
-    ? { status: "AVAILABLE" as const, listing: { sellerId } }
-    : { status: "AVAILABLE" as const };
-  const orderSellerFilter = sellerId ? { lines: { some: { listing: { sellerId } } } } : {};
-
   const [activeListings, availableUnits, openOrders, recentOrders] = await Promise.all([
-    db.sellerListing.count({ where: listingWhere }),
-    db.inventoryUnit.count({ where: inventoryWhere }),
-    db.order.count({ where: { ...orderSellerFilter, status: { in: ["PAID", "PROCESSING", "SHIPPED"] } } }),
+    db.sellerListing.count({ where: sellerId ? { sellerId, status: "ACTIVE" } : { status: "ACTIVE" } }),
+    db.inventoryUnit.count({ where: sellerId ? { status: "AVAILABLE", listing: { sellerId } } : { status: "AVAILABLE" } }),
+    db.order.count({ where: { status: { in: ["PAID", "PROCESSING", "SHIPPED"] }, ...(sellerId ? { lines: { some: { listing: { sellerId } } } } : {}) } }),
     db.order.findMany({
-      where: { ...orderSellerFilter, status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] } },
+      where: { status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] }, ...(sellerId ? { lines: { some: { listing: { sellerId } } } } : {}) },
       orderBy: { updatedAt: "desc" },
       take: 8,
       include: {
