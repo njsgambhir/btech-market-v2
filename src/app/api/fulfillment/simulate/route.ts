@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (session.user.role === "SELLER") {
-    const seller = await db.seller.findUnique({ where: { userId: session.user.id }, select: { id: true } });
-    if (!seller) {
-      return NextResponse.json({ error: "Seller account required." }, { status: 403 });
+    const seller = await db.seller.findUnique({ where: { userId: session.user.id }, select: { id: true, status: true } });
+    if (!seller || seller.status !== "APPROVED") {
+      return NextResponse.json({ error: "Approved seller account required." }, { status: 403 });
     }
 
     const ownedOrder = await db.order.findFirst({
