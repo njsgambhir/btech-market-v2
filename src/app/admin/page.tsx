@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { SellerStatusControl } from "@/components/admin/seller-status-control";
+import { ListingStatusControl } from "@/components/admin/listing-status-control";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +114,7 @@ export default async function AdminPage() {
             <p><strong>{listing.variant.model.name}</strong> · {listing.variant.storage} · {listing.variant.color}</p>
             <p>{listing.seller.displayName} · {listing.status} · US${(listing.priceCents / 100).toLocaleString()}</p>
             <p>{available} available · {listing.inventory.length} total inventory units</p>
+            <ListingStatusControl listingId={listing.id} status={listing.status} />
           </article>;
         })}
       </section>
