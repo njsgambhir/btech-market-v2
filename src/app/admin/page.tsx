@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { SellerVerificationControl } from "@/components/admin/seller-verification-control";
+import { SellerStatusControl } from "@/components/admin/seller-status-control";
 
 export const dynamic = "force-dynamic";
 
@@ -88,9 +88,9 @@ export default async function AdminPage() {
           <div>
             {recentSellers.map((seller) => (
               <div key={seller.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
-                <p><strong>{seller.displayName}</strong> · {seller.verified ? "Verified" : "Pending verification"}</p>
+                <p><strong>{seller.displayName}</strong> · {seller.status.replaceAll("_", " ")}</p>
                 <p>{seller.user.email} · {seller._count.listings} listings</p>
-                <SellerVerificationControl sellerId={seller.id} verified={seller.verified} />
+                <SellerStatusControl sellerId={seller.id} status={seller.status} />
               </div>
             ))}
           </div>
