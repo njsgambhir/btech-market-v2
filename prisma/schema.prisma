@@ -13,6 +13,13 @@ enum UserRole {
   ADMIN
 }
 
+enum SellerStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
 enum ListingStatus {
   DRAFT
   ACTIVE
@@ -70,6 +77,7 @@ model Seller {
   userId      String @unique
   displayName String
   verified    Boolean @default(false)
+  status      SellerStatus @default(PENDING)
   user        User @relation(fields: [userId], references: [id])
   listings    SellerListing[]
   createdAt   DateTime @default(now())
