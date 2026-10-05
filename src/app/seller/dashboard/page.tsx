@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function Dashboard() {
   const session = await auth();
   if (!session?.user?.id) redirect("/account");
-  if (session.user.role !== "SELLER" && session.user.role !== "ADMIN") redirect("/account");
+  if (!["SELLER", "ADMIN"].includes(session.user.role ?? "")) redirect("/account");
 
   const [activeListings, availableUnits, openOrders, recentOrders] = await Promise.all([
     db.sellerListing.count({ where: { status: "ACTIVE" } }),
