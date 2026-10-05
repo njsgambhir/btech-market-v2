@@ -98,6 +98,18 @@ export default async function AdminPage() {
       </section>
 
       <section className="panel">
+        <h2>Inventory & listings</h2>
+        {listings.length === 0 ? <p>No listings yet.</p> : listings.map((listing) => {
+          const available = listing.inventory.filter((unit) => unit.status === "AVAILABLE").length;
+          return <article key={listing.id} style={{ borderTop: "1px solid #ddd", padding: "18px 0" }}>
+            <p><strong>{listing.variant.model.name}</strong> · {listing.variant.storage} · {listing.variant.color}</p>
+            <p>{listing.seller.displayName} · {listing.status} · US${(listing.priceCents / 100).toLocaleString()}</p>
+            <p>{available} available · {listing.inventory.length} total inventory units</p>
+          </article>;
+        })}
+      </section>
+
+      <section className="panel">
         <h2>Next admin modules</h2>
         <p>Seller approvals, inventory oversight, returns, refunds and payouts will be added to this workspace.</p>
       </section>
