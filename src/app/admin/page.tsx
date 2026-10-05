@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { SellerStatusControl } from "@/components/admin/seller-status-control";
 import { ListingStatusControl } from "@/components/admin/listing-status-control";
 import { InventoryUnitControl } from "@/components/admin/inventory-unit-control";
+import { OrderStatusControl } from "@/components/admin/order-status-control";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,7 @@ export default async function AdminPage() {
                   {order.trackingNumber ? ` · Tracking ${order.carrier ?? ""} ${order.trackingNumber}` : ""}
                 </p>
                 <Link href={`/order-confirmation?order=${order.id}`}>View order</Link>
+                <OrderStatusControl orderId={order.id} status={order.status} />
               </div>
             ))}
           </div>
