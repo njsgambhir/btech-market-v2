@@ -12,30 +12,109 @@ export async function POST(request: Request) {
 
   const order = await db.order.findUnique({
     where: { id: body.orderId },
-    include: { lines: { include: { inventory: true } } },
+    include: { payments: true, lines: { include: { inventory: true } } },
   });
   if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
-  if (order.status !== "REFUNDED") return NextResponse.json({ error: "Only refunded orders can enter return inspection." }, { status: 409 });
 
   const statuses = order.lines.flatMap((line) => line.inventory.map((unit) => unit.status));
 
-  if (body.action === "receive") {
-    if (!statuses.some((status) => status === "RETURN_EXPECTED")) return NextResponse.json({ error: "No returned device is awaiting receipt." }, { status: 409 });
-    await db.$transaction([
-      db.inventoryUnit.updateMany({ where: { orderLine: { orderId: order.id }, status: "RETURN_EXPECTED" }, data: { status: "INSPECTION" } }),
-      db.order.update({ where: { id: order.id }, data: { returnReceivedAt: new Date() } }),
-    ]);
-    return NextResponse.json({ ok: true });
+  if (body.action === "request") {
+    if (order.status !== "DELIVERED" || order.returnStatus) {
+      return NextResponse.json({ error: "Only delivered orders without an existing return can start a return." }, { status: 409 });
+    }
+    await db.order.update({
+      where: { id: order.id },
+      data: { returnStatus: "REQUESTED", returnRequestedAt: new Date() },
+    });
+    return NextResponse.json({ ok: true, returnStatus: "REQUESTED" });
   }
 
-  if (body.action === "restock" || body.action === "quarantine") {
-    if (!statuses.some((status) => status === "INSPECTION")) return NextResponse.json({ error: "Returned device must be received before inspection is completed." }, { status: 409 });
-    const status = body.action === "restock" ? "AVAILABLE" : "QUARANTINED";
+  if (body.action === "authorize") {
+    if (order.returnStatus !== "REQUESTED") return NextResponse.json({ error: "Return must be requested before authorization." }, { status: 409 });
+    await db.order.update({
+      where: { id: order.id },
+      data: { returnStatus: "AUTHORIZED", returnAuthorizedAt: new Date() },
+    });
+    return NextResponse.json({ ok: true, returnStatus: "AUTHORIZED" });
+  }
+
+  if (body.action === "receive") {
+    if (!["AUTHORIZED", "IN_TRANSIT"].includes(order.returnStatus ?? "")) {
+      return NextResponse.json({ error: "Return must be authorized before it can be received." }, { status: 409 });
+    }
+    if (!statuses.some((status) => status === "SOLD")) {
+      return NextResponse.json({ error: "No sold inventory is attached to this return." }, { status: 409 });
+    }
     await db.$transaction([
-      db.inventoryUnit.updateMany({ where: { orderLine: { orderId: order.id }, status: "INSPECTION" }, data: { status, orderLineId: null, reservedUntil: null } }),
-      db.order.update({ where: { id: order.id }, data: { returnInspectedAt: new Date() } }),
+      db.inventoryUnit.updateMany({
+        where: { orderLine: { orderId: order.id }, status: "SOLD" },
+        data: { status: "INSPECTION" },
+      }),
+      db.order.update({
+        where: { id: order.id },
+        data: { returnStatus: "RECEIVED", returnReceivedAt: new Date() },
+      }),
     ]);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, returnStatus: "RECEIVED" });
+  }
+
+  if (body.action === "approve") {
+    if (order.returnStatus !== "RECEIVED" || !statuses.some((status) => status === "INSPECTION")) {
+      return NextResponse.json({ error: "Returned device must be received before inspection approval." }, { status: 409 });
+    }
+    await db.$transaction([
+      db.inventoryUnit.updateMany({
+        where: { orderLine: { orderId: order.id }, status: "INSPECTION" },
+        data: { status: "RETURNED" },
+      }),
+      db.order.update({
+        where: { id: order.id },
+        data: { returnStatus: "APPROVED", returnInspectedAt: new Date() },
+      }),
+    ]);
+    return NextResponse.json({ ok: true, returnStatus: "APPROVED" });
+  }
+
+  if (body.action === "reject") {
+    if (order.returnStatus !== "RECEIVED" || !statuses.some((status) => status === "INSPECTION")) {
+      return NextResponse.json({ error: "Returned device must be received before inspection rejection." }, { status: 409 });
+    }
+    await db.$transaction([
+      db.inventoryUnit.updateMany({
+        where: { orderLine: { orderId: order.id }, status: "INSPECTION" },
+        data: { status: "QUARANTINED" },
+      }),
+      db.order.update({
+        where: { id: order.id },
+        data: { returnStatus: "REJECTED", returnInspectedAt: new Date() },
+      }),
+    ]);
+    return NextResponse.json({ ok: true, returnStatus: "REJECTED" });
+  }
+
+  if (body.action === "refund") {
+    if (order.returnStatus !== "APPROVED") {
+      return NextResponse.json({ error: "Refund is locked until the returned device passes inspection." }, { status: 409 });
+    }
+    const payment = order.payments.find((item) => item.status === "SUCCEEDED");
+    if (!payment) return NextResponse.json({ error: "No successful payment found for this order." }, { status: 409 });
+
+    // Development payment lifecycle: replace with provider refund confirmation before production.
+    await db.$transaction([
+      db.payment.updateMany({
+        where: { orderId: order.id, status: "SUCCEEDED" },
+        data: { status: "REFUNDED" },
+      }),
+      db.inventoryUnit.updateMany({
+        where: { orderLine: { orderId: order.id }, status: "RETURNED" },
+        data: { status: "AVAILABLE", orderLineId: null, reservedUntil: null },
+      }),
+      db.order.update({
+        where: { id: order.id },
+        data: { status: "REFUNDED", returnStatus: "REFUNDED" },
+      }),
+    ]);
+    return NextResponse.json({ ok: true, returnStatus: "REFUNDED" });
   }
 
   return NextResponse.json({ error: "Unsupported return action." }, { status: 400 });
