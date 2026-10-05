@@ -32,7 +32,10 @@ enum InventoryStatus {
   AVAILABLE
   RESERVED
   SOLD
+  RETURN_EXPECTED
   RETURNED
+  INSPECTION
+  QUARANTINED
 }
 
 enum Grade {
@@ -169,6 +172,9 @@ model Order {
   customer    User @relation(fields: [customerId], references: [id])
   lines       OrderLine[]
   payments    Payment[]
+  returnRequestedAt DateTime?
+  returnReceivedAt  DateTime?
+  returnInspectedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
