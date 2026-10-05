@@ -8,13 +8,12 @@ export function OrderStatusControl({ orderId, status }: { orderId: string; statu
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const action = status === "PENDING_PAYMENT" ? "cancel" :
-    ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"].includes(status) ? "refund" : null;
+  const action = status === "PENDING_PAYMENT" ? "cancel" : null;
 
   if (!action) return null;
 
   async function submit() {
-    const label = action === "refund" ? "refund this order" : "cancel this unpaid order";
+    const label = "cancel this unpaid order";
     if (!window.confirm(`Are you sure you want to ${label}?`)) return;
     setBusy(true); setError("");
     const response = await fetch("/api/admin/orders", {
@@ -30,7 +29,7 @@ export function OrderStatusControl({ orderId, status }: { orderId: string; statu
 
   return <div style={{ marginTop: 10 }}>
     <button type="button" onClick={submit} disabled={busy}>
-      {busy ? "Updating…" : action === "refund" ? "Refund order" : "Cancel order"}
+      {busy ? "Updating…" : "Cancel order"}
     </button>
     {error ? <p style={{ marginTop: 8 }}>{error}</p> : null}
   </div>;
