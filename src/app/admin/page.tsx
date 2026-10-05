@@ -6,6 +6,7 @@ import { SellerStatusControl } from "@/components/admin/seller-status-control";
 import { ListingStatusControl } from "@/components/admin/listing-status-control";
 import { InventoryUnitControl } from "@/components/admin/inventory-unit-control";
 import { OrderStatusControl } from "@/components/admin/order-status-control";
+import { ReturnInspectionControl } from "@/components/admin/return-inspection-control";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function AdminPage() {
             listing: {
               include: { variant: { include: { model: true } } },
             },
+            inventory: { select: { status: true } },
           },
         },
       },
@@ -86,6 +88,7 @@ export default async function AdminPage() {
                 </p>
                 <Link href={`/order-confirmation?order=${order.id}`}>View order</Link>
                 <OrderStatusControl orderId={order.id} status={order.status} />
+                {order.status === "REFUNDED" ? <ReturnInspectionControl orderId={order.id} inventoryStatus={order.lines.flatMap((line) => line.inventory)[0]?.status ?? ""} /> : null}
               </div>
             ))}
           </div>
