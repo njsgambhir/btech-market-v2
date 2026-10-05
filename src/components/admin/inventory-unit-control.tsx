@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type InventoryStatus = "AVAILABLE" | "RESERVED" | "SOLD" | "RETURNED";
+type InventoryStatus = "AVAILABLE" | "RESERVED" | "SOLD" | "RETURN_EXPECTED" | "RETURNED" | "INSPECTION" | "QUARANTINED";
 
 export function InventoryUnitControl({
   inventoryUnitId,
