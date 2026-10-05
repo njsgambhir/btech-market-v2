@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import {
   markOrderDelivered,
   markOrderProcessing,
@@ -37,6 +38,21 @@ export async function POST(request: NextRequest) {
 
   if (!body.orderId || !body.action) {
     return NextResponse.json({ error: "Order and fulfillment action are required." }, { status: 400 });
+  }
+
+  if (session.user.role === "SELLER") {
+    const seller = await db.seller.findUnique({ where: { userId: session.user.id }, select: { id: true } });
+    if (!seller) {
+      return NextResponse.json({ error: "Seller account required." }, { status: 403 });
+    }
+
+    const ownedOrder = await db.order.findFirst({
+      where: { id: body.orderId, lines: { some: { listing: { sellerId: seller.id } } } },
+      select: { id: true },
+    });
+    if (!ownedOrder) {
+      return NextResponse.json({ error: "Order not available to this seller." }, { status: 403 });
+    }
   }
 
   try {
