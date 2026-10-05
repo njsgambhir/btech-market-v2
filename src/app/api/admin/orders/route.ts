@@ -50,9 +50,9 @@ export async function POST(request: Request) {
       });
       await tx.inventoryUnit.updateMany({
         where: { orderLine: { orderId: order.id }, status: "SOLD" },
-        data: { status: "RETURNED" },
+        data: { status: "RETURN_EXPECTED" },
       });
-      await tx.order.update({ where: { id: order.id }, data: { status: "REFUNDED" } });
+      await tx.order.update({ where: { id: order.id }, data: { status: "REFUNDED", returnRequestedAt: new Date() } });
     });
     return NextResponse.json({ ok: true, status: "REFUNDED" });
   }
