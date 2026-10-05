@@ -88,7 +88,9 @@ export default async function AdminPage() {
                 </p>
                 <Link href={`/order-confirmation?order=${order.id}`}>View order</Link>
                 <OrderStatusControl orderId={order.id} status={order.status} />
-                {order.status === "REFUNDED" ? <ReturnInspectionControl orderId={order.id} inventoryStatus={order.lines.flatMap((line) => line.inventory)[0]?.status ?? ""} /> : null}
+                {["DELIVERED", "REFUNDED"].includes(order.status) || order.returnStatus ? (
+                  <ReturnInspectionControl orderId={order.id} orderStatus={order.status} returnStatus={order.returnStatus} />
+                ) : null}
               </div>
             ))}
           </div>
