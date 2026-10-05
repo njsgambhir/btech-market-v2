@@ -66,13 +66,13 @@ export default async function AdminPage() {
             {recentOrders.map((order) => (
               <div key={order.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
                 <p>
-                  <strong>Order # {order.orderNumber}</strong> · {money.format(order.totalCents / 100)} · {order.status}
+                  <strong>Order # {order.id.slice(-8).toUpperCase()}</strong> · {money.format(order.totalCents / 100)} · {order.status}
                 </p>
                 <p>
                   {order.lines.map((line) => line.listing.variant.model.name).join(", ")}
                   {order.trackingNumber ? ` · Tracking ${order.carrier ?? ""} ${order.trackingNumber}` : ""}
                 </p>
-                <Link href={`/order-confirmation?order=${order.orderNumber}`}>View order</Link>
+                <Link href={`/order-confirmation?order=${order.id}`}>View order</Link>
               </div>
             ))}
           </div>
