@@ -123,7 +123,7 @@ export default async function AdminPage() {
                   <p>
                     IMEI {unit.imei ?? "—"} · Serial {unit.serialNumber ?? "—"} · Battery {unit.batteryHealth ? `${unit.batteryHealth}%` : "—"}
                   </p>
-                  {unit.reservedUntil ? <p>Reserved until {new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Toronto" }).format(unit.reservedUntil)} ET</p> : null}
+                  {unit.reservedUntil ? <p>Reserved until {unit.reservedUntil.toLocaleString()} UTC</p> : null}
                   <InventoryUnitControl inventoryUnitId={unit.id} status={unit.status} />
                 </div>
               ))}
