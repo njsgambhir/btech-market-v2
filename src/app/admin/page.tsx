@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { SellerStatusControl } from "@/components/admin/seller-status-control";
 import { ListingStatusControl } from "@/components/admin/listing-status-control";
+import { InventoryUnitControl } from "@/components/admin/inventory-unit-control";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function AdminPage() {
       include: {
         seller: true,
         variant: { include: { model: true } },
-        inventory: { select: { id: true, status: true, batteryHealth: true } },
+        inventory: { select: { id: true, status: true, batteryHealth: true, imei: true, serialNumber: true, reservedUntil: true } },
       },
     }),
   ]);
@@ -115,6 +116,18 @@ export default async function AdminPage() {
             <p>{listing.seller.displayName} · {listing.status} · US${(listing.priceCents / 100).toLocaleString()}</p>
             <p>{available} available · {listing.inventory.length} total inventory units</p>
             <ListingStatusControl listingId={listing.id} status={listing.status} />
+            <div style={{ marginTop: 16 }}>
+              {listing.inventory.map((unit) => (
+                <div key={unit.id} style={{ padding: "12px 0", borderTop: "1px dashed #ddd" }}>
+                  <p><strong>Inventory unit</strong> · {unit.status}</p>
+                  <p>
+                    IMEI {unit.imei ?? "—"} · Serial {unit.serialNumber ?? "—"} · Battery {unit.batteryHealth ? `${unit.batteryHealth}%` : "—"}
+                  </p>
+                  {unit.reservedUntil ? <p>Reserved until {unit.reservedUntil.toLocaleString()}</p> : null}
+                  <InventoryUnitControl inventoryUnitId={unit.id} status={unit.status} />
+                </div>
+              ))}
+            </div>
           </article>;
         })}
       </section>
