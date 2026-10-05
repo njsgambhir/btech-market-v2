@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export function SellerVerificationControl({ sellerId, verified }: { sellerId: string; verified: boolean }) {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [current, setCurrent] = useState(verified);
   const [error, setError] = useState("");
@@ -16,7 +18,10 @@ export function SellerVerificationControl({ sellerId, verified }: { sellerId: st
     });
     const data = await response.json();
     if (!response.ok) setError(data.error ?? "Unable to update seller.");
-    else setCurrent(data.seller.verified);
+    else {
+      setCurrent(data.seller.verified);
+      router.refresh();
+    }
     setBusy(false);
   }
 
