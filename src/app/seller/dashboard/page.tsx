@@ -12,7 +12,7 @@ export default async function Dashboard() {
 
   const isAdmin = session.user.role === "ADMIN";
   const seller = isAdmin ? null : await db.seller.findUnique({ where: { userId: session.user.id } });
-  if (!isAdmin && !seller) redirect("/account");
+  if (!isAdmin && (!seller || seller.status !== "APPROVED")) redirect("/account");
 
   const sellerId = seller?.id;
   const [activeListings, availableUnits, openOrders, recentOrders] = await Promise.all([
