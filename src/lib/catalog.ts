@@ -50,6 +50,7 @@ export async function getOffers(category?: string) {
   const listings = await db.sellerListing.findMany({
     where: {
       status: "ACTIVE",
+      seller: { approvalStatus: "APPROVED" },
       ...(category ? { variant: { model: { category: { name: category } } } } : {}),
       inventory: { some: { status: "AVAILABLE" } },
     },
@@ -61,7 +62,7 @@ export async function getOffers(category?: string) {
 
 export async function getOffer(id: string) {
   const listing = await db.sellerListing.findFirst({
-    where: { id, status: "ACTIVE", inventory: { some: { status: "AVAILABLE" } } },
+    where: { id, status: "ACTIVE", seller: { approvalStatus: "APPROVED" }, inventory: { some: { status: "AVAILABLE" } } },
     include,
   });
   return listing ? toOffer(listing) : undefined;
