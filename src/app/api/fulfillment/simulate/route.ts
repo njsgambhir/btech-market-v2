@@ -24,6 +24,9 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
+  if (!["SELLER", "ADMIN"].includes(session.user.role ?? "")) {
+    return NextResponse.json({ error: "Seller or admin access required." }, { status: 403 });
+  }
 
   let body: FulfillmentBody;
   try {
