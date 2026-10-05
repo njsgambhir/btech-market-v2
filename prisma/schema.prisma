@@ -63,6 +63,16 @@ enum OrderStatus {
   REFUNDED
 }
 
+enum ReturnStatus {
+  REQUESTED
+  AUTHORIZED
+  IN_TRANSIT
+  RECEIVED
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -172,7 +182,9 @@ model Order {
   customer    User @relation(fields: [customerId], references: [id])
   lines       OrderLine[]
   payments    Payment[]
+  returnStatus      ReturnStatus?
   returnRequestedAt DateTime?
+  returnAuthorizedAt DateTime?
   returnReceivedAt  DateTime?
   returnInspectedAt DateTime?
   createdAt   DateTime @default(now())
