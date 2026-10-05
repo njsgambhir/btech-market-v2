@@ -34,28 +34,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, status: "CANCELLED" });
   }
 
-  if (body.action === "refund") {
-    if (!["PAID", "PROCESSING", "SHIPPED", "DELIVERED"].includes(order.status)) {
-      return NextResponse.json({ error: "This order is not eligible for a refund." }, { status: 409 });
-    }
-    const succeededPayment = order.payments.find((payment) => payment.status === "SUCCEEDED");
-    if (!succeededPayment) return NextResponse.json({ error: "No successful payment found." }, { status: 409 });
-
-    // Development lifecycle only: a real payment provider refund must be completed before
-    // this transition is used in production.
-    await db.$transaction(async (tx) => {
-      await tx.payment.updateMany({
-        where: { orderId: order.id, status: "SUCCEEDED" },
-        data: { status: "REFUNDED" },
-      });
-      await tx.inventoryUnit.updateMany({
-        where: { orderLine: { orderId: order.id }, status: "SOLD" },
-        data: { status: "RETURN_EXPECTED" },
-      });
-      await tx.order.update({ where: { id: order.id }, data: { status: "REFUNDED", returnRequestedAt: new Date() } });
-    });
-    return NextResponse.json({ ok: true, status: "REFUNDED" });
-  }
 
   return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
 }
