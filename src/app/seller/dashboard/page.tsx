@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { SellerFulfillmentControls } from "@/components/seller/seller-fulfillment-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function Dashboard() {
         <p>{order.firstName} {order.lastName} · {order.city}, {order.country}</p>
         {order.lines.map((line) => <p key={line.id}><strong>{line.listing.variant.model.name}</strong> · {line.listing.variant.storage} · {line.listing.variant.color} × {line.quantity}</p>)}
         {order.trackingNumber ? <p>Tracking: {order.carrier} · {order.trackingNumber}</p> : null}
+        {(order.status === "PAID" || order.status === "PROCESSING" || order.status === "SHIPPED") ? <SellerFulfillmentControls orderId={order.id} status={order.status} /> : null}
       </article>)}
     </section>
   </main>;
