@@ -11,7 +11,7 @@ export default async function AdminPage() {
   if (!session?.user?.id) redirect("/account");
   if (session.user.role !== "ADMIN") redirect("/account");
 
-  const [users, sellers, listings, orders, recentOrders, recentSellers] = await Promise.all([
+  const [users, sellers, activeListings, orders, recentOrders, recentSellers, marketplaceListings] = await Promise.all([
     db.user.count(),
     db.seller.count(),
     db.sellerListing.count({ where: { status: "ACTIVE" } }),
@@ -37,6 +37,14 @@ export default async function AdminPage() {
         _count: { select: { listings: true } },
       },
     }),
+    db.sellerListing.findMany({
+      orderBy: { updatedAt: "desc" },
+      include: {
+        seller: true,
+        variant: { include: { model: true } },
+        inventory: { select: { id: true, status: true, batteryHealth: true } },
+      },
+    }),
   ]);
 
   const money = new Intl.NumberFormat("en-US", {
@@ -54,7 +62,7 @@ export default async function AdminPage() {
       <div className="statGrid">
         <div className="statCard"><span>Users</span><strong>{users}</strong></div>
         <div className="statCard"><span>Sellers</span><strong>{sellers}</strong></div>
-        <div className="statCard"><span>Active listings</span><strong>{listings}</strong></div>
+        <div className="statCard"><span>Active listings</span><strong>{activeListings}</strong></div>
         <div className="statCard"><span>Total orders</span><strong>{orders}</strong></div>
       </div>
 
@@ -99,7 +107,7 @@ export default async function AdminPage() {
 
       <section className="panel">
         <h2>Inventory & listings</h2>
-        {listings.length === 0 ? <p>No listings yet.</p> : listings.map((listing) => {
+        {marketplaceListings.length === 0 ? <p>No listings yet.</p> : marketplaceListings.map((listing) => {
           const available = listing.inventory.filter((unit) => unit.status === "AVAILABLE").length;
           return <article key={listing.id} style={{ borderTop: "1px solid #ddd", padding: "18px 0" }}>
             <p><strong>{listing.variant.model.name}</strong> · {listing.variant.storage} · {listing.variant.color}</p>
