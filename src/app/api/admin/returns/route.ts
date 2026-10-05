@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       }),
       db.inventoryUnit.updateMany({
         where: { orderLine: { orderId: order.id }, status: "RETURNED" },
-        data: { status: "AVAILABLE", orderLineId: null, reservedUntil: null },
+        data: { status: "RETURNED", reservedUntil: null },
       }),
       db.order.update({
         where: { id: order.id },
