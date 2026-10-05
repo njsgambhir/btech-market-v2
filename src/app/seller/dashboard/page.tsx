@@ -1,9 +1,15 @@
 import { db } from "@/lib/db";
 import { SellerFulfillmentControls } from "@/components/seller/seller-fulfillment-controls";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/account");
+  if (session.user.role !== "SELLER" && session.user.role !== "ADMIN") redirect("/account");
+
   const [activeListings, availableUnits, openOrders, recentOrders] = await Promise.all([
     db.sellerListing.count({ where: { status: "ACTIVE" } }),
     db.inventoryUnit.count({ where: { status: "AVAILABLE" } }),
