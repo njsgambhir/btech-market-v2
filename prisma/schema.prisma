@@ -73,6 +73,29 @@ enum ReturnStatus {
   REFUNDED
 }
 
+enum SellerLedgerEntryType {
+  SALE_CREDIT
+  PAYOUT
+  RETURN_DEBIT
+  SHIPPING_DEBIT
+  ADJUSTMENT
+}
+
+enum SellerLedgerEntryStatus {
+  PENDING
+  POSTED
+  SETTLED
+  VOID
+}
+
+enum VendorReturnStatus {
+  PENDING
+  READY_TO_SHIP
+  SHIPPED
+  RECEIVED_BY_VENDOR
+  CLOSED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -93,6 +116,8 @@ model Seller {
   status      SellerStatus @default(PENDING)
   user        User @relation(fields: [userId], references: [id])
   listings    SellerListing[]
+  ledgerEntries SellerLedgerEntry[]
+  vendorReturns VendorReturn[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -219,4 +244,41 @@ model Payment {
 
   @@index([orderId])
   @@index([status])
+}
+
+
+model SellerLedgerEntry {
+  id          String                  @id @default(cuid())
+  sellerId    String
+  orderLineId String?
+  type        SellerLedgerEntryType
+  status      SellerLedgerEntryStatus @default(POSTED)
+  amountCents Int
+  currency    String                  @default("USD")
+  note        String?
+  seller      Seller                  @relation(fields: [sellerId], references: [id])
+  orderLine   OrderLine?              @relation(fields: [orderLineId], references: [id])
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@index([sellerId, status])
+  @@index([orderLineId])
+}
+
+model VendorReturn {
+  id             String             @id @default(cuid())
+  sellerId       String
+  orderLineId    String
+  status         VendorReturnStatus @default(PENDING)
+  carrier        String?
+  trackingNumber String?
+  shippedAt      DateTime?
+  receivedAt     DateTime?
+  seller         Seller             @relation(fields: [sellerId], references: [id])
+  orderLine      OrderLine          @relation(fields: [orderLineId], references: [id])
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([sellerId, status])
+  @@index([orderLineId])
 }
