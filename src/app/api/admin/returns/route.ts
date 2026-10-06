@@ -112,11 +112,27 @@ export async function POST(request: Request) {
 
       for (const line of order.lines) {
         const sellerId = line.listing.sellerId;
+        const saleCredit = await tx.sellerLedgerEntry.findFirst({
+          where: { orderLineId: line.id, type: "SALE_CREDIT" },
+          select: { id: true, status: true },
+        });
         const existingDebit = await tx.sellerLedgerEntry.findFirst({
           where: { orderLineId: line.id, type: "RETURN_DEBIT" },
           select: { id: true },
         });
-        if (!existingDebit) {
+
+        // If the vendor has not been paid yet, void the pending proceeds instead
+        // of creating an artificial debit. A posted/settled credit means Btech
+        // has already recognized vendor proceeds, so recover them with a debit.
+        if (saleCredit?.status === "PENDING") {
+          await tx.sellerLedgerEntry.update({
+            where: { id: saleCredit.id },
+            data: {
+              status: "VOID",
+              note: "Vendor proceeds voided because the customer order was refunded before payout.",
+            },
+          });
+        } else if (!existingDebit) {
           await tx.sellerLedgerEntry.create({
             data: {
               sellerId,
@@ -125,7 +141,7 @@ export async function POST(request: Request) {
               status: "POSTED",
               amountCents: -(line.unitPriceCents * line.quantity),
               currency: payment.currency,
-              note: "Customer refund charged back to vendor settlement.",
+              note: "Customer refund charged back after vendor proceeds were recognized.",
             },
           });
         }
