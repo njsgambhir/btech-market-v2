@@ -12,25 +12,44 @@ export async function refreshEligibleSellerCredits(now = new Date()) {
   });
 }
 
-export async function getSellerPayoutBalance(sellerId: string, now = new Date()) {
+export async function getSellerSettlementSummary(sellerId: string, now = new Date()) {
   await refreshEligibleSellerCredits(now);
 
-  const entries = await db.sellerLedgerEntry.findMany({
-    where: {
-      sellerId,
-      status: { in: ["POSTED", "SETTLED"] },
-    },
-    select: { type: true, status: true, amountCents: true },
-  });
+  const [pendingReserve, available, paid] = await Promise.all([
+    db.sellerLedgerEntry.aggregate({
+      where: {
+        sellerId,
+        type: "SALE_CREDIT",
+        status: "PENDING",
+      },
+      _sum: { amountCents: true },
+    }),
+    db.sellerLedgerEntry.aggregate({
+      where: {
+        sellerId,
+        status: "POSTED",
+        type: { in: ["SALE_CREDIT", "RETURN_DEBIT", "SHIPPING_DEBIT", "ADJUSTMENT"] },
+      },
+      _sum: { amountCents: true },
+    }),
+    db.sellerPayout.aggregate({
+      where: {
+        sellerId,
+        status: "PAID",
+      },
+      _sum: { amountCents: true },
+    }),
+  ]);
 
-  const availableCents = entries
-    .filter((entry) => entry.status === "POSTED")
-    .reduce((sum, entry) => sum + entry.amountCents, 0);
+  return {
+    pendingCents: pendingReserve._sum.amountCents ?? 0,
+    availableCents: available._sum.amountCents ?? 0,
+    paidCents: paid._sum.amountCents ?? 0,
+  };
+}
 
-  const paidCents = entries
-    .filter((entry) => entry.status === "SETTLED" && entry.type === "PAYOUT")
-    .reduce((sum, entry) => sum + Math.abs(entry.amountCents), 0);
-
+export async function getSellerPayoutBalance(sellerId: string, now = new Date()) {
+  const { availableCents, paidCents } = await getSellerSettlementSummary(sellerId, now);
   return { availableCents, paidCents };
 }
 
