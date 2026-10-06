@@ -96,6 +96,14 @@ enum VendorReturnStatus {
   CLOSED
 }
 
+enum SellerPayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -118,6 +126,7 @@ model Seller {
   listings    SellerListing[]
   ledgerEntries SellerLedgerEntry[]
   vendorReturns VendorReturn[]
+  payouts       SellerPayout[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -270,6 +279,24 @@ model SellerLedgerEntry {
 
   @@index([sellerId, status])
   @@index([orderLineId])
+  @@index([sellerId, type, status, eligibleAt])
+}
+
+model SellerPayout {
+  id          String             @id @default(cuid())
+  sellerId    String
+  status      SellerPayoutStatus @default(PENDING)
+  amountCents Int
+  currency    String             @default("USD")
+  provider    String             @default("development")
+  providerRef String?            @unique
+  paidAt      DateTime?
+  note        String?
+  seller      Seller             @relation(fields: [sellerId], references: [id])
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([sellerId, status])
 }
 
 model VendorReturn {
