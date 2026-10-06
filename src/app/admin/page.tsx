@@ -10,6 +10,7 @@ import { ReturnInspectionControl } from "@/components/admin/return-inspection-co
 import { VendorReturnControl } from "@/components/admin/vendor-return-control";
 import { SellerPayoutControl } from "@/components/admin/seller-payout-control";
 import { CompleteReserveControl } from "@/components/admin/complete-reserve-control";
+import { AddTestInventoryControl } from "@/components/admin/add-test-inventory-control";
 import { refreshEligibleSellerCredits } from "@/lib/seller-payout-lifecycle";
 
 export const dynamic = "force-dynamic";
@@ -200,6 +201,9 @@ export default async function AdminPage() {
             <p>{listing.seller.displayName} · {listing.status} · US${(listing.priceCents / 100).toLocaleString()}</p>
             <p>{available} available · {listing.inventory.length} total inventory units</p>
             <ListingStatusControl listingId={listing.id} status={listing.status} />
+            {process.env.VERCEL_ENV !== "production" && listing.seller.displayName === "Btech Verified" && listing.variant.model.name === "iPhone 15 Pro" ? (
+              <AddTestInventoryControl listingId={listing.id} />
+            ) : null}
             <div style={{ marginTop: 16 }}>
               {listing.inventory.map((unit) => (
                 <div key={unit.id} style={{ padding: "12px 0", borderTop: "1px dashed #ddd" }}>
