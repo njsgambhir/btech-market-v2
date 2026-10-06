@@ -8,6 +8,8 @@ import { InventoryUnitControl } from "@/components/admin/inventory-unit-control"
 import { OrderStatusControl } from "@/components/admin/order-status-control";
 import { ReturnInspectionControl } from "@/components/admin/return-inspection-control";
 import { VendorReturnControl } from "@/components/admin/vendor-return-control";
+import { SellerPayoutControl } from "@/components/admin/seller-payout-control";
+import { refreshEligibleSellerCredits } from "@/lib/seller-payout-lifecycle";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,9 @@ export default async function AdminPage() {
   if (!session?.user?.id) redirect("/account");
   if (session.user.role !== "ADMIN") redirect("/account");
 
-  const [users, sellers, activeListings, orders, recentOrders, recentSellers, marketplaceListings, vendorReturns, ledgerEntries] = await Promise.all([
+  await refreshEligibleSellerCredits();
+
+  const [users, sellers, activeListings, orders, recentOrders, recentSellers, marketplaceListings, vendorReturns, ledgerEntries, payouts] = await Promise.all([
     db.user.count(),
     db.seller.count(),
     db.sellerListing.count({ where: { status: "ACTIVE" } }),
@@ -63,6 +67,11 @@ export default async function AdminPage() {
       orderBy: { createdAt: "desc" },
       take: 30,
       include: { seller: true, orderLine: { include: { order: true } } },
+    }),
+    db.sellerPayout.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { seller: true },
     }),
   ]);
 
@@ -126,6 +135,28 @@ export default async function AdminPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="panel">
+        <h2>Seller payouts</h2>
+        {recentSellers.map((seller) => {
+          const sellerEntries = ledgerEntries.filter((entry) => entry.sellerId === seller.id);
+          const pendingCents = sellerEntries.filter((entry) => entry.type === "SALE_CREDIT" && entry.status === "PENDING").reduce((sum, entry) => sum + entry.amountCents, 0);
+          const availableCents = sellerEntries.filter((entry) => entry.status === "POSTED").reduce((sum, entry) => sum + entry.amountCents, 0);
+          const paidCents = payouts.filter((payout) => payout.sellerId === seller.id && payout.status === "PAID").reduce((sum, payout) => sum + payout.amountCents, 0);
+          return <div key={seller.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
+            <p><strong>{seller.displayName}</strong> · {seller.status}</p>
+            <p>Pending reserve: {money.format(pendingCents / 100)} · Available: {money.format(availableCents / 100)} · Paid: {money.format(paidCents / 100)}</p>
+            <SellerPayoutControl sellerId={seller.id} availableCents={availableCents} />
+          </div>;
+        })}
+        {payouts.length ? <>
+          <h3 style={{ marginTop: 24 }}>Recent payouts</h3>
+          {payouts.map((payout) => <div key={payout.id} style={{ padding: "10px 0", borderTop: "1px dashed #ddd" }}>
+            <p><strong>{payout.seller.displayName}</strong> · {money.format(payout.amountCents / 100)} · {payout.status}</p>
+            <p>{payout.paidAt ? `Paid ${payout.paidAt.toLocaleString()} UTC` : "Not paid yet"} · {payout.provider}</p>
+          </div>)}
+        </> : null}
       </section>
 
       <section className="panel">
