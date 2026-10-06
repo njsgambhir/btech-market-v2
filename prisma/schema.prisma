@@ -127,6 +127,7 @@ model Seller {
   ledgerEntries SellerLedgerEntry[]
   vendorReturns VendorReturn[]
   payouts       SellerPayout[]
+  payoutItems   SellerPayoutItem[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -275,6 +276,7 @@ model SellerLedgerEntry {
   seller      Seller                  @relation(fields: [sellerId], references: [id])
   orderLine   OrderLine?              @relation(fields: [orderLineId], references: [id])
   createdAt   DateTime                @default(now())
+  payoutItems SellerPayoutItem[]
   updatedAt   DateTime                @updatedAt
 
   @@index([sellerId, status])
@@ -293,10 +295,28 @@ model SellerPayout {
   paidAt      DateTime?
   note        String?
   seller      Seller             @relation(fields: [sellerId], references: [id])
+  items       SellerPayoutItem[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
   @@index([sellerId, status])
+}
+
+model SellerPayoutItem {
+  id            String            @id @default(cuid())
+  payoutId      String
+  sellerId      String
+  ledgerEntryId String
+  amountCents   Int
+  currency      String            @default("USD")
+  payout        SellerPayout      @relation(fields: [payoutId], references: [id])
+  seller        Seller            @relation(fields: [sellerId], references: [id])
+  ledgerEntry   SellerLedgerEntry @relation(fields: [ledgerEntryId], references: [id])
+  createdAt     DateTime          @default(now())
+
+  @@unique([payoutId, ledgerEntryId])
+  @@index([sellerId, createdAt])
+  @@index([ledgerEntryId])
 }
 
 model VendorReturn {
