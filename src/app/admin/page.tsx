@@ -201,7 +201,10 @@ export default async function AdminPage() {
             <p>{listing.seller.displayName} · {listing.status} · US${(listing.priceCents / 100).toLocaleString()}</p>
             <p>{available} available · {listing.inventory.length} total inventory units</p>
             <ListingStatusControl listingId={listing.id} status={listing.status} />
-            {process.env.VERCEL_ENV !== "production" && listing.seller.displayName === "Btech Verified" && listing.variant.model.name === "iPhone 15 Pro" ? (
+            {process.env.VERCEL_ENV !== "production" && (
+              (listing.seller.displayName === "Btech Verified" && listing.variant.model.name === "iPhone 15 Pro") ||
+              (listing.seller.displayName === "Mobile Renew" && listing.variant.model.name === "iPhone 14")
+            ) ? (
               <AddTestInventoryControl listingId={listing.id} />
             ) : null}
             <div style={{ marginTop: 16 }}>
