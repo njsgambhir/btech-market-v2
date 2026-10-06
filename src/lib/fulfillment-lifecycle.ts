@@ -49,9 +49,36 @@ export async function markOrderDelivered(orderId: string) {
   if (order.status === OrderStatus.DELIVERED) return order;
   if (order.status !== OrderStatus.SHIPPED) throw new Error("INVALID_FULFILLMENT_STATE");
 
-  const updated = await db.order.update({
-    where: { id: order.id },
-    data: { status: OrderStatus.DELIVERED, deliveredAt: new Date() },
+  const deliveredAt = new Date();
+  const updated = await db.$transaction(async (tx) => {
+    const delivered = await tx.order.update({
+      where: { id: order.id },
+      data: { status: OrderStatus.DELIVERED, deliveredAt },
+      include: { lines: { select: { id: true } } },
+    });
+
+    const lineIds = delivered.lines.map((line) => line.id);
+    if (lineIds.length) {
+      const credits = await tx.sellerLedgerEntry.findMany({
+        where: {
+          orderLineId: { in: lineIds },
+          type: "SALE_CREDIT",
+          status: "PENDING",
+        },
+        select: { id: true, reserveDays: true },
+      });
+
+      for (const credit of credits) {
+        const eligibleAt = new Date(deliveredAt);
+        eligibleAt.setUTCDate(eligibleAt.getUTCDate() + (credit.reserveDays ?? 7));
+        await tx.sellerLedgerEntry.update({
+          where: { id: credit.id },
+          data: { eligibleAt },
+        });
+      }
+    }
+
+    return delivered;
   });
 
   await notifyBuyer({ event: "ORDER_DELIVERED", orderId: updated.id, email: updated.email });
