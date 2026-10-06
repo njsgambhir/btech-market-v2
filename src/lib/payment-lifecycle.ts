@@ -55,22 +55,39 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
       data: { status: OrderStatus.PAID },
     });
 
-    // Record what Btech owes each vendor. Payout timing is handled separately.
+    // Snapshot the marketplace economics at the time of sale.
+    // Future settings changes must not rewrite historical seller proceeds.
+    const settings = await tx.marketplaceSettings.upsert({
+      where: { id: "default" },
+      update: {},
+      create: { id: "default", defaultCommissionBps: 600, reserveDays: 7 },
+    });
+
     for (const line of payment.order.lines) {
       const existingCredit = await tx.sellerLedgerEntry.findFirst({
         where: { orderLineId: line.id, type: "SALE_CREDIT" },
         select: { id: true },
       });
       if (!existingCredit) {
+        const grossAmountCents = line.unitPriceCents * line.quantity;
+        const commissionAmountCents = Math.round(
+          (grossAmountCents * settings.defaultCommissionBps) / 10000,
+        );
+        const sellerProceedsCents = grossAmountCents - commissionAmountCents;
+
         await tx.sellerLedgerEntry.create({
           data: {
             sellerId: line.listing.sellerId,
             orderLineId: line.id,
             type: "SALE_CREDIT",
             status: "PENDING",
-            amountCents: line.unitPriceCents * line.quantity,
+            amountCents: sellerProceedsCents,
+            grossAmountCents,
+            commissionAmountCents,
+            commissionBps: settings.defaultCommissionBps,
+            reserveDays: settings.reserveDays,
             currency: payment.currency,
-            note: "Vendor proceeds recorded after customer payment.",
+            note: "Vendor net proceeds recorded after Btech marketplace commission.",
           },
         });
       }
