@@ -7,6 +7,7 @@ import { ListingStatusControl } from "@/components/admin/listing-status-control"
 import { InventoryUnitControl } from "@/components/admin/inventory-unit-control";
 import { OrderStatusControl } from "@/components/admin/order-status-control";
 import { ReturnInspectionControl } from "@/components/admin/return-inspection-control";
+import { VendorReturnControl } from "@/components/admin/vendor-return-control";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +139,7 @@ export default async function AdminPage() {
                 <p>{item.orderLine.listing.variant.model.name} · Order # {item.orderLine.order.id.slice(-8).toUpperCase()}</p>
                 <p>Vendor return debit: {debit ? money.format(Math.abs(debit.amountCents) / 100) : "Pending"}</p>
                 <p>Return tracking: {item.trackingNumber ? `${item.carrier ?? ""} ${item.trackingNumber}` : "Not shipped to vendor yet"}</p>
+                <VendorReturnControl vendorReturnId={item.id} status={item.status} />
               </div>;
             })}
             <h3 style={{ marginTop: 24 }}>Seller ledger</h3>
