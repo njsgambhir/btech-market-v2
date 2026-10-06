@@ -9,6 +9,7 @@ import { OrderStatusControl } from "@/components/admin/order-status-control";
 import { ReturnInspectionControl } from "@/components/admin/return-inspection-control";
 import { VendorReturnControl } from "@/components/admin/vendor-return-control";
 import { SellerPayoutControl } from "@/components/admin/seller-payout-control";
+import { CompleteReserveControl } from "@/components/admin/complete-reserve-control";
 import { refreshEligibleSellerCredits } from "@/lib/seller-payout-lifecycle";
 
 export const dynamic = "force-dynamic";
@@ -178,6 +179,12 @@ export default async function AdminPage() {
               <div key={entry.id} style={{ padding: "10px 0", borderTop: "1px dashed #ddd" }}>
                 <p><strong>{entry.seller.displayName}</strong> · {entry.type.replaceAll("_", " ")} · {money.format(entry.amountCents / 100)} · {entry.status}</p>
                 <p>Order # {entry.orderLine?.order.id.slice(-8).toUpperCase() ?? "—"}{entry.note ? ` · ${entry.note}` : ""}</p>
+                {process.env.VERCEL_ENV !== "production" && entry.type === "SALE_CREDIT" && entry.status === "PENDING" && entry.eligibleAt && entry.commissionBps != null ? (
+                  <>
+                    <p>Gross {money.format((entry.grossAmountCents ?? 0) / 100)} · Btech commission {(entry.commissionBps / 100).toFixed(2)}% ({money.format((entry.commissionAmountCents ?? 0) / 100)}) · Eligible {entry.eligibleAt.toLocaleString()} UTC</p>
+                    <CompleteReserveControl ledgerEntryId={entry.id} />
+                  </>
+                ) : null}
               </div>
             ))}
           </div>
