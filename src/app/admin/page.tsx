@@ -73,7 +73,13 @@ export default async function AdminPage() {
     db.sellerPayout.findMany({
       orderBy: { createdAt: "desc" },
       take: 20,
-      include: { seller: true },
+      include: {
+        seller: true,
+        items: {
+          orderBy: { createdAt: "asc" },
+          include: { ledgerEntry: { include: { orderLine: { include: { order: true } } } } },
+        },
+      },
     }),
   ]);
 
@@ -164,6 +170,17 @@ export default async function AdminPage() {
           {payouts.map((payout) => <div key={payout.id} style={{ padding: "10px 0", borderTop: "1px dashed #ddd" }}>
             <p><strong>{payout.seller.displayName}</strong> · {money.format(payout.amountCents / 100)} · {payout.status}</p>
             <p>{payout.paidAt ? `Paid ${payout.paidAt.toLocaleString()} UTC` : "Not paid yet"} · {payout.provider}</p>
+            {payout.items.length ? (
+              <div style={{ marginLeft: 16 }}>
+                <p><strong>Payout composition</strong></p>
+                {payout.items.map((item) => (
+                  <p key={item.id}>
+                    {item.ledgerEntry.type.replaceAll("_", " ")} · {money.format(item.amountCents / 100)}
+                    {item.ledgerEntry.orderLine ? ` · Order # ${item.ledgerEntry.orderLine.order.id.slice(-8).toUpperCase()}` : ""}
+                  </p>
+                ))}
+              </div>
+            ) : <p>Composition not recorded for this historical payout.</p>}
           </div>)}
         </> : null}
       </section>
