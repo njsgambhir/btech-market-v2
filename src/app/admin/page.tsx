@@ -15,7 +15,7 @@ export default async function AdminPage() {
   if (!session?.user?.id) redirect("/account");
   if (session.user.role !== "ADMIN") redirect("/account");
 
-  const [users, sellers, activeListings, orders, recentOrders, recentSellers, marketplaceListings] = await Promise.all([
+  const [users, sellers, activeListings, orders, recentOrders, recentSellers, marketplaceListings, vendorReturns, ledgerEntries] = await Promise.all([
     db.user.count(),
     db.seller.count(),
     db.sellerListing.count({ where: { status: "ACTIVE" } }),
@@ -49,6 +49,19 @@ export default async function AdminPage() {
         variant: { include: { model: true } },
         inventory: { select: { id: true, status: true, batteryHealth: true, imei: true, serialNumber: true, reservedUntil: true } },
       },
+    }),
+    db.vendorReturn.findMany({
+      orderBy: { updatedAt: "desc" },
+      take: 12,
+      include: {
+        seller: true,
+        orderLine: { include: { order: true, listing: { include: { variant: { include: { model: true } } } }, inventory: true } },
+      },
+    }),
+    db.sellerLedgerEntry.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      include: { seller: true, orderLine: { include: { order: true } } },
     }),
   ]);
 
@@ -108,6 +121,30 @@ export default async function AdminPage() {
                 <p><strong>{seller.displayName}</strong> · {seller.status.replaceAll("_", " ")}</p>
                 <p>{seller.user.email} · {seller._count.listings} listings</p>
                 <SellerStatusControl sellerId={seller.id} status={seller.status} />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="panel">
+        <h2>Vendor returns & settlements</h2>
+        {vendorReturns.length === 0 && ledgerEntries.length === 0 ? <p>No vendor return or settlement activity yet.</p> : (
+          <div>
+            {vendorReturns.map((item) => {
+              const debit = ledgerEntries.find((entry) => entry.orderLineId === item.orderLineId && entry.type === "RETURN_DEBIT");
+              return <div key={item.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
+                <p><strong>{item.seller.displayName}</strong> · {item.status.replaceAll("_", " ")}</p>
+                <p>{item.orderLine.listing.variant.model.name} · Order # {item.orderLine.order.id.slice(-8).toUpperCase()}</p>
+                <p>Vendor return debit: {debit ? money.format(Math.abs(debit.amountCents) / 100) : "Pending"}</p>
+                <p>Return tracking: {item.trackingNumber ? `${item.carrier ?? ""} ${item.trackingNumber}` : "Not shipped to vendor yet"}</p>
+              </div>;
+            })}
+            <h3 style={{ marginTop: 24 }}>Seller ledger</h3>
+            {ledgerEntries.map((entry) => (
+              <div key={entry.id} style={{ padding: "10px 0", borderTop: "1px dashed #ddd" }}>
+                <p><strong>{entry.seller.displayName}</strong> · {entry.type.replaceAll("_", " ")} · {money.format(entry.amountCents / 100)} · {entry.status}</p>
+                <p>Order # {entry.orderLine?.order.id.slice(-8).toUpperCase() ?? "—"}{entry.note ? ` · ${entry.note}` : ""}</p>
               </div>
             ))}
           </div>
