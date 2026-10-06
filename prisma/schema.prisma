@@ -225,6 +225,8 @@ model OrderLine {
   order          Order @relation(fields: [orderId], references: [id])
   listing        SellerListing @relation(fields: [listingId], references: [id])
   inventory      InventoryUnit[]
+  ledgerEntries  SellerLedgerEntry[]
+  vendorReturns  VendorReturn[]
 }
 
 
