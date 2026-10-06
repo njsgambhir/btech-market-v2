@@ -17,18 +17,19 @@ export function ReturnInspectionControl({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [currentReturnStatus, setCurrentReturnStatus] = useState<ReturnStatus>(returnStatus);
 
   const actions =
-    orderStatus === "DELIVERED" && !returnStatus ? [{ action: "request", label: "Start return" }] :
-    returnStatus === "REQUESTED" ? [{ action: "authorize", label: "Authorize return" }] :
-    returnStatus === "AUTHORIZED" || returnStatus === "IN_TRANSIT" ? [{ action: "receive", label: "Receive returned phone" }] :
-    returnStatus === "RECEIVED" ? [
+    orderStatus === "DELIVERED" && !currentReturnStatus ? [{ action: "request", label: "Start return" }] :
+    currentReturnStatus === "REQUESTED" ? [{ action: "authorize", label: "Authorize return" }] :
+    currentReturnStatus === "AUTHORIZED" || currentReturnStatus === "IN_TRANSIT" ? [{ action: "receive", label: "Receive returned phone" }] :
+    currentReturnStatus === "RECEIVED" ? [
       { action: "approve", label: "Pass inspection" },
       { action: "reject", label: "Fail inspection" },
     ] :
-    returnStatus === "APPROVED" ? [{ action: "refund", label: "Issue refund" }] : [];
+    currentReturnStatus === "APPROVED" ? [{ action: "refund", label: "Issue refund" }] : [];
 
-  if (!actions.length && !returnStatus) return null;
+  if (!actions.length && !currentReturnStatus) return null;
 
   async function submit(action: string) {
     if (action === "refund" && !window.confirm("Issue the refund now that the returned phone has passed inspection?")) return;
@@ -41,6 +42,7 @@ export function ReturnInspectionControl({
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error ?? "Return update failed.");
+      if (data.returnStatus) setCurrentReturnStatus(data.returnStatus as ReturnStatus);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Return update failed.");
@@ -50,7 +52,7 @@ export function ReturnInspectionControl({
   }
 
   return <div style={{ marginTop: 10 }}>
-    <p><strong>Return</strong> · {(returnStatus ?? "NOT STARTED").replaceAll("_", " ")}</p>
+    <p><strong>Return</strong> · {(currentReturnStatus ?? "NOT STARTED").replaceAll("_", " ")}</p>
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {actions.map(({ action, label }) => (
         <button key={action} type="button" disabled={busy} onClick={() => submit(action)}>
@@ -58,7 +60,7 @@ export function ReturnInspectionControl({
         </button>
       ))}
     </div>
-    {returnStatus === "REJECTED" ? <p>Refund locked. Device is quarantined for manual resolution.</p> : null}
-    {error ? <p style={{ marginTop: 8 }}>{error}</p> : null}
+    {currentReturnStatus === "REJECTED" ? <p>Refund locked. Device is quarantined for manual resolution.</p> : null}
+    {error ? <p style={{ marginTop: 8, color: "#b00020", fontWeight: 600 }}>Return update failed: {error}</p> : null}
   </div>;
 }
