@@ -9,7 +9,7 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
       include: {
         order: {
           include: {
-            lines: { include: { inventory: true } },
+            lines: { include: { inventory: true, listing: { select: { sellerId: true } } } },
           },
         },
       },
@@ -54,6 +54,27 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
       where: { id: payment.orderId },
       data: { status: OrderStatus.PAID },
     });
+
+    // Record what Btech owes each vendor. Payout timing is handled separately.
+    for (const line of payment.order.lines) {
+      const existingCredit = await tx.sellerLedgerEntry.findFirst({
+        where: { orderLineId: line.id, type: "SALE_CREDIT" },
+        select: { id: true },
+      });
+      if (!existingCredit) {
+        await tx.sellerLedgerEntry.create({
+          data: {
+            sellerId: line.listing.sellerId,
+            orderLineId: line.id,
+            type: "SALE_CREDIT",
+            status: "PENDING",
+            amountCents: line.unitPriceCents * line.quantity,
+            currency: payment.currency,
+            note: "Vendor proceeds recorded after customer payment.",
+          },
+        });
+      }
+    }
 
     const completed = await tx.payment.update({
       where: { id: payment.id },
