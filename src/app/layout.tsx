@@ -11,6 +11,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en"><body><CartProvider>
+      {process.env.VERCEL_ENV !== "production" ? (
+        <div style={{ background: "#111", color: "#fff", padding: "8px 16px", textAlign: "center", fontSize: 13, fontWeight: 700, letterSpacing: ".04em" }}>
+          PREVIEW BUILD · {process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local"}
+        </div>
+      ) : null}
       <header className="siteHeader">
         <a className="brand" href="/">BTECH MARKET</a>
         <nav aria-label="Main navigation">
