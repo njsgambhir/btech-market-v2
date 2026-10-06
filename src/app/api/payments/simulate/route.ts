@@ -31,7 +31,8 @@ export async function POST(request: Request) {
     select: { id: true, order: { select: { customerId: true } } },
   });
 
-  if (!payment || payment.order.customerId !== session.user.id) {
+  const isAdminTest = session.user.role === "ADMIN" && process.env.VERCEL_ENV !== "production";
+  if (!payment || (payment.order.customerId !== session.user.id && !isAdminTest)) {
     return NextResponse.json({ error: "Payment not found." }, { status: 404 });
   }
 
