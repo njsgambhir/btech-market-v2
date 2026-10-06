@@ -250,14 +250,19 @@ model Payment {
 
 
 model SellerLedgerEntry {
-  id          String                  @id @default(cuid())
-  sellerId    String
-  orderLineId String?
-  type        SellerLedgerEntryType
-  status      SellerLedgerEntryStatus @default(POSTED)
-  amountCents Int
-  currency    String                  @default("USD")
-  note        String?
+  id                    String                  @id @default(cuid())
+  sellerId              String
+  orderLineId           String?
+  type                  SellerLedgerEntryType
+  status                SellerLedgerEntryStatus @default(POSTED)
+  amountCents           Int
+  grossAmountCents      Int?
+  commissionAmountCents Int?
+  commissionBps         Int?
+  reserveDays           Int?
+  eligibleAt            DateTime?
+  currency              String                  @default("USD")
+  note                  String?
   seller      Seller                  @relation(fields: [sellerId], references: [id])
   orderLine   OrderLine?              @relation(fields: [orderLineId], references: [id])
   createdAt   DateTime                @default(now())
@@ -283,4 +288,12 @@ model VendorReturn {
 
   @@index([sellerId, status])
   @@index([orderLineId])
+}
+
+
+model MarketplaceSettings {
+  id                   String   @id @default("default")
+  defaultCommissionBps Int      @default(600)
+  reserveDays          Int      @default(7)
+  updatedAt            DateTime @updatedAt
 }
