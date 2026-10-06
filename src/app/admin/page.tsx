@@ -11,7 +11,7 @@ import { VendorReturnControl } from "@/components/admin/vendor-return-control";
 import { SellerPayoutControl } from "@/components/admin/seller-payout-control";
 import { CompleteReserveControl } from "@/components/admin/complete-reserve-control";
 import { AddTestInventoryControl } from "@/components/admin/add-test-inventory-control";
-import { refreshEligibleSellerCredits } from "@/lib/seller-payout-lifecycle";
+import { getSellerSettlementSummary, refreshEligibleSellerCredits } from "@/lib/seller-payout-lifecycle";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +76,15 @@ export default async function AdminPage() {
       include: { seller: true },
     }),
   ]);
+
+  const sellerSettlementSummaries = new Map(
+    await Promise.all(
+      recentSellers.map(async (seller) => [
+        seller.id,
+        await getSellerSettlementSummary(seller.id),
+      ] as const),
+    ),
+  );
 
   const money = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -142,10 +151,8 @@ export default async function AdminPage() {
       <section className="panel">
         <h2>Seller payouts</h2>
         {recentSellers.map((seller) => {
-          const sellerEntries = ledgerEntries.filter((entry) => entry.sellerId === seller.id);
-          const pendingCents = sellerEntries.filter((entry) => entry.type === "SALE_CREDIT" && entry.status === "PENDING").reduce((sum, entry) => sum + entry.amountCents, 0);
-          const availableCents = sellerEntries.filter((entry) => entry.status === "POSTED").reduce((sum, entry) => sum + entry.amountCents, 0);
-          const paidCents = payouts.filter((payout) => payout.sellerId === seller.id && payout.status === "PAID").reduce((sum, payout) => sum + payout.amountCents, 0);
+          const summary = sellerSettlementSummaries.get(seller.id) ?? { pendingCents: 0, availableCents: 0, paidCents: 0 };
+          const { pendingCents, availableCents, paidCents } = summary;
           return <div key={seller.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
             <p><strong>{seller.displayName}</strong> · {seller.status}</p>
             <p>Pending reserve: {money.format(pendingCents / 100)} · Available: {money.format(availableCents / 100)} · Paid: {money.format(paidCents / 100)}</p>
