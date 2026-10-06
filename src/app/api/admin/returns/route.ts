@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
   const order = await db.order.findUnique({
     where: { id: body.orderId },
-    include: { payments: true, lines: { include: { inventory: true } } },
+    include: { payments: true, lines: { include: { inventory: true, listing: { select: { sellerId: true } } } } },
   });
   if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
 
@@ -100,20 +100,56 @@ export async function POST(request: Request) {
     if (!payment) return NextResponse.json({ error: "No successful payment found for this order." }, { status: 409 });
 
     // Development payment lifecycle: replace with provider refund confirmation before production.
-    await db.$transaction([
-      db.payment.updateMany({
+    await db.$transaction(async (tx) => {
+      await tx.payment.updateMany({
         where: { orderId: order.id, status: "SUCCEEDED" },
         data: { status: "REFUNDED" },
-      }),
-      db.inventoryUnit.updateMany({
+      });
+      await tx.inventoryUnit.updateMany({
         where: { orderLine: { orderId: order.id }, status: "RETURNED" },
         data: { status: "RETURNED", reservedUntil: null },
-      }),
-      db.order.update({
+      });
+
+      for (const line of order.lines) {
+        const sellerId = line.listing.sellerId;
+        const existingDebit = await tx.sellerLedgerEntry.findFirst({
+          where: { orderLineId: line.id, type: "RETURN_DEBIT" },
+          select: { id: true },
+        });
+        if (!existingDebit) {
+          await tx.sellerLedgerEntry.create({
+            data: {
+              sellerId,
+              orderLineId: line.id,
+              type: "RETURN_DEBIT",
+              status: "POSTED",
+              amountCents: -(line.unitPriceCents * line.quantity),
+              currency: payment.currency,
+              note: "Customer refund charged back to vendor settlement.",
+            },
+          });
+        }
+
+        const existingVendorReturn = await tx.vendorReturn.findFirst({
+          where: { orderLineId: line.id },
+          select: { id: true },
+        });
+        if (!existingVendorReturn) {
+          await tx.vendorReturn.create({
+            data: {
+              sellerId,
+              orderLineId: line.id,
+              status: "READY_TO_SHIP",
+            },
+          });
+        }
+      }
+
+      await tx.order.update({
         where: { id: order.id },
         data: { status: "REFUNDED", returnStatus: "REFUNDED" },
-      }),
-    ]);
+      });
+    });
     return NextResponse.json({ ok: true, returnStatus: "REFUNDED" });
   }
 
