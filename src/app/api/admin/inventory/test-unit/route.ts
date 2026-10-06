@@ -21,15 +21,21 @@ export async function POST(request: Request) {
     include: { seller: true, variant: { include: { model: true } } },
   });
   if (!listing) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
-  if (listing.seller.displayName !== "Btech Verified" || listing.variant.model.name !== "iPhone 15 Pro") {
-    return NextResponse.json({ error: "This test action is limited to the Btech Verified iPhone 15 Pro listing." }, { status: 409 });
+  const allowedTestListing =
+    (listing.seller.displayName === "Btech Verified" && listing.variant.model.name === "iPhone 15 Pro") ||
+    (listing.seller.displayName === "Mobile Renew" && listing.variant.model.name === "iPhone 14");
+  if (!allowedTestListing) {
+    return NextResponse.json({ error: "This listing is not enabled for Preview test inventory." }, { status: 409 });
+  }
+  if (listing.seller.status !== "APPROVED") {
+    return NextResponse.json({ error: "Seller must be approved before test inventory can be added." }, { status: 409 });
   }
 
   const suffix = crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase();
   const unit = await db.inventoryUnit.create({
     data: {
       listingId: listing.id,
-      serialNumber: `BTECH-DEV-${suffix}`,
+      serialNumber: `${listing.seller.displayName === "Mobile Renew" ? "MOBILE-RENEW" : "BTECH"}-DEV-${suffix}`,
       batteryHealth: 94,
       status: "AVAILABLE",
     },
