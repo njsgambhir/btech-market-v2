@@ -97,6 +97,16 @@ export async function simulateSellerPayout(sellerId: string) {
       },
     });
 
+    await tx.sellerPayoutItem.createMany({
+      data: availableEntries.map((entry) => ({
+        payoutId: payout.id,
+        sellerId,
+        ledgerEntryId: entry.id,
+        amountCents: entry.amountCents,
+        currency: entry.currency,
+      })),
+    });
+
     await tx.sellerLedgerEntry.updateMany({
       where: { id: { in: availableEntries.map((entry) => entry.id) }, status: "POSTED" },
       data: { status: "SETTLED" },
