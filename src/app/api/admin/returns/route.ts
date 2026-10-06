@@ -114,17 +114,17 @@ export async function POST(request: Request) {
         const sellerId = line.listing.sellerId;
         const saleCredit = await tx.sellerLedgerEntry.findFirst({
           where: { orderLineId: line.id, type: "SALE_CREDIT" },
-          select: { id: true, status: true },
+          select: { id: true, status: true, amountCents: true },
         });
         const existingDebit = await tx.sellerLedgerEntry.findFirst({
           where: { orderLineId: line.id, type: "RETURN_DEBIT" },
           select: { id: true },
         });
 
-        // If the vendor has not been paid yet, void the pending proceeds instead
-        // of creating an artificial debit. A posted/settled credit means Btech
-        // has already recognized vendor proceeds, so recover them with a debit.
-        if (saleCredit?.status === "PENDING") {
+        // Pending or payout-eligible proceeds have not left Btech yet, so void
+        // the credit rather than creating a compensating debit. Only a SETTLED
+        // credit has actually been paid to the seller and must be recovered.
+        if (saleCredit && ["PENDING", "POSTED"].includes(saleCredit.status)) {
           await tx.sellerLedgerEntry.update({
             where: { id: saleCredit.id },
             data: {
@@ -132,7 +132,20 @@ export async function POST(request: Request) {
               note: "Vendor proceeds voided because the customer order was refunded before payout.",
             },
           });
-        } else if (!existingDebit) {
+        } else if (saleCredit?.status === "SETTLED" && !existingDebit) {
+          await tx.sellerLedgerEntry.create({
+            data: {
+              sellerId,
+              orderLineId: line.id,
+              type: "RETURN_DEBIT",
+              status: "POSTED",
+              amountCents: -saleCredit.amountCents,
+              currency: payment.currency,
+              note: "Net seller proceeds charged back after a customer refund following payout.",
+            },
+          });
+        } else if (!saleCredit && !existingDebit) {
+          // Legacy fallback for orders created before seller-credit snapshots existed.
           await tx.sellerLedgerEntry.create({
             data: {
               sellerId,
@@ -141,7 +154,7 @@ export async function POST(request: Request) {
               status: "POSTED",
               amountCents: -(line.unitPriceCents * line.quantity),
               currency: payment.currency,
-              note: "Customer refund charged back after vendor proceeds were recognized.",
+              note: "Legacy customer refund charged back without a seller-credit snapshot.",
             },
           });
         }
