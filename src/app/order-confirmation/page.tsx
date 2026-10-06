@@ -27,8 +27,10 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
   });
   if (!order) notFound();
 
-  // Signed-in customers may only view their own order confirmation.
-  if (session?.user?.id && order.customerId !== session.user.id) notFound();
+  // Signed-in customers may only view their own order. In Preview only, admins
+  // may inspect test customer orders without changing their permanent role.
+  const isAdminTest = session?.user?.role === "ADMIN" && process.env.VERCEL_ENV !== "production";
+  if (session?.user?.id && order.customerId !== session.user.id && !isAdminTest) notFound();
 
   const reservedUntil = order.lines
     .flatMap((line) => line.inventory)
@@ -63,7 +65,7 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
             <strong>{ "US$" + (order.totalCents / 100).toLocaleString() }</strong>
           </div>
         </div>
-        {order.status === "PENDING_PAYMENT" && session?.user?.id === order.customerId ? <TestPaymentButton orderId={order.id} /> : null}
+        {order.status === "PENDING_PAYMENT" && (session?.user?.id === order.customerId || isAdminTest) ? <TestPaymentButton orderId={order.id} /> : null}
         {order.status === "PAID" ? <p><strong>Payment received.</strong> Your order is confirmed and the device has been allocated to your order.</p> : null}
         {order.status === "PROCESSING" ? <p><strong>Processing.</strong> Your order is being prepared for shipment.</p> : null}
         {order.status === "SHIPPED" ? <p><strong>Shipped.</strong> {order.carrier} tracking: {order.trackingNumber}</p> : null}
