@@ -55,6 +55,29 @@ export async function markPaymentSucceeded(paymentId: string, providerPaymentId?
       data: { status: OrderStatus.PAID },
     });
 
+    // Split the paid order into one fulfillment unit per seller.
+    const sellerGroups = new Map<string, { lineIds: string[]; subtotalCents: number }>();
+    for (const line of payment.order.lines) {
+      const sellerId = line.listing.sellerId;
+      const group = sellerGroups.get(sellerId) ?? { lineIds: [], subtotalCents: 0 };
+      group.lineIds.push(line.id);
+      group.subtotalCents += line.unitPriceCents * line.quantity;
+      sellerGroups.set(sellerId, group);
+    }
+
+    for (const [sellerId, group] of sellerGroups) {
+      const suborder = await tx.sellerSuborder.upsert({
+        where: { orderId_sellerId: { orderId: payment.orderId, sellerId } },
+        update: {},
+        create: { orderId: payment.orderId, sellerId, status: "PAID", subtotalCents: group.subtotalCents, currency: payment.currency },
+        select: { id: true },
+      });
+      await tx.orderLine.updateMany({
+        where: { id: { in: group.lineIds }, sellerSuborderId: null },
+        data: { sellerSuborderId: suborder.id },
+      });
+    }
+
     // Snapshot the marketplace economics at the time of sale.
     // Future settings changes must not rewrite historical seller proceeds.
     const settings = await tx.marketplaceSettings.upsert({
