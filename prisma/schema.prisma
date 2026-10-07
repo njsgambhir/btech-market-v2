@@ -250,6 +250,8 @@ model OrderLine {
   vendorReturns  VendorReturn[]
   sellerSuborderId String?
   sellerSuborder SellerSuborder? @relation(fields: [sellerSuborderId], references: [id])
+
+  @@index([sellerSuborderId])
 }
 
 model SellerSuborder {
