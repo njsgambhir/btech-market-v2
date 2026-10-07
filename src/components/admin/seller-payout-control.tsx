@@ -20,18 +20,23 @@ export function SellerPayoutControl({
 
     setBusy(true);
     setMessage("");
+    const requestId = crypto.randomUUID();
     try {
       const response = await fetch("/api/admin/payouts/simulate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sellerId }),
+        body: JSON.stringify({ sellerId, requestId }),
       });
       const data = await response.json();
       if (!response.ok) {
         setMessage(data.error ?? "Payout could not be completed.");
         return;
       }
-      setMessage(`Test payout completed: US$${(data.amountCents / 100).toFixed(2)}.`);
+      setMessage(
+        data.duplicate
+          ? `Payout already completed: US$${(data.amountCents / 100).toFixed(2)}.`
+          : `Test payout completed: US$${(data.amountCents / 100).toFixed(2)}.`,
+      );
       router.refresh();
     } catch {
       setMessage("Payout could not be completed.");
