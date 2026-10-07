@@ -76,7 +76,7 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
           <section style={{ marginTop: "24px" }}>
             <h3>Shipments</h3>
             {order.sellerSuborders.map((suborder) => (
-              <div className="summaryCard" style={{ marginTop: "8px", padding: "16px 20px" }} key={suborder.id}>
+              <div style={{ marginTop: "8px", padding: "14px 20px", border: "1px solid #e5e7eb" }} key={suborder.id}>
                 <p style={{ margin: "0 0 8px" }}><strong>{suborder.seller.displayName}</strong> · {suborder.status.replaceAll("_", " ")}</p>
                 {suborder.lines.map((line) => (
                   <p style={{ margin: "0 0 8px" }} key={line.id}>{line.listing.variant.model.name} · {line.listing.variant.storage} · {line.listing.variant.color} × {line.quantity}</p>
