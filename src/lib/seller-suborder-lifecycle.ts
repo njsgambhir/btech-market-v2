@@ -11,7 +11,7 @@ async function syncParentOrder(orderId: string) {
     await db.order.update({ where: { id: orderId }, data: { status: "DELIVERED", deliveredAt } });
     return;
   }
-  if (suborders.every((item) => [SellerSuborderStatus.SHIPPED, SellerSuborderStatus.DELIVERED].includes(item.status))) {
+  if (suborders.every((item) => item.status === SellerSuborderStatus.SHIPPED || item.status === SellerSuborderStatus.DELIVERED)) {
     await db.order.update({ where: { id: orderId }, data: { status: "SHIPPED" } });
     return;
   }
