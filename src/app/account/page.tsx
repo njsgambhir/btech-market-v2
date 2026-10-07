@@ -44,6 +44,10 @@ export default async function AccountPage() {
       lines: {
         include: { listing: { include: { variant: { include: { model: true } } } } },
       },
+      sellerSuborders: {
+        orderBy: { createdAt: "asc" },
+        include: { seller: { select: { displayName: true } } },
+      },
     },
   });
 
@@ -82,6 +86,17 @@ export default async function AccountPage() {
                 <strong>{line.listing.variant.model.name}</strong> · {line.listing.variant.storage} · {line.listing.variant.color} × {line.quantity}
               </p>
             ))}
+            {order.sellerSuborders.length ? (
+              <div style={{ display: "grid", gap: "5px", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #e5e7eb" }}>
+                {order.sellerSuborders.map((suborder) => (
+                  <div key={suborder.id} style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <strong>{suborder.seller.displayName}</strong>
+                    <span>· {suborder.status.replaceAll("_", " ")}</span>
+                    {suborder.trackingNumber ? <span>· {suborder.carrier ?? ""} {suborder.trackingNumber}</span> : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </article>
         ))}
       </section>
