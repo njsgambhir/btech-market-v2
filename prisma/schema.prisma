@@ -73,6 +73,16 @@ enum ReturnStatus {
   REFUNDED
 }
 
+enum ReturnCaseStatus {
+  REQUESTED
+  AUTHORIZED
+  IN_TRANSIT
+  RECEIVED
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
 enum SellerLedgerEntryType {
   SALE_CREDIT
   PAYOUT
@@ -138,6 +148,7 @@ model Seller {
   payouts       SellerPayout[]
   payoutItems   SellerPayoutItem[]
   suborders     SellerSuborder[]
+  returns       ReturnCase[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -228,6 +239,7 @@ model Order {
   lines       OrderLine[]
   payments    Payment[]
   sellerSuborders SellerSuborder[]
+  returns           ReturnCase[]
   returnStatus      ReturnStatus?
   returnRequestedAt DateTime?
   returnAuthorizedAt DateTime?
@@ -248,6 +260,7 @@ model OrderLine {
   inventory      InventoryUnit[]
   ledgerEntries  SellerLedgerEntry[]
   vendorReturns  VendorReturn[]
+  returnItems      ReturnItem[]
   sellerSuborderId String?
   sellerSuborder SellerSuborder? @relation(fields: [sellerSuborderId], references: [id])
 
@@ -354,6 +367,47 @@ model SellerPayoutItem {
   @@unique([payoutId, ledgerEntryId])
   @@index([sellerId, createdAt])
   @@index([ledgerEntryId])
+}
+
+
+model ReturnCase {
+  id                 String           @id @default(cuid())
+  orderId            String
+  sellerId           String
+  status             ReturnCaseStatus @default(REQUESTED)
+  requestedAt        DateTime         @default(now())
+  authorizedAt       DateTime?
+  receivedAt         DateTime?
+  inspectedAt        DateTime?
+  refundedAt         DateTime?
+  customerCarrier    String?
+  customerTracking   String?
+  order              Order            @relation(fields: [orderId], references: [id])
+  seller             Seller           @relation(fields: [sellerId], references: [id])
+  items              ReturnItem[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([orderId, status])
+  @@index([sellerId, status])
+}
+
+model ReturnItem {
+  id             String      @id @default(cuid())
+  returnCaseId   String
+  orderLineId    String
+  inventoryUnitId String
+  refundCents    Int
+  currency       String      @default("USD")
+  returnCase     ReturnCase  @relation(fields: [returnCaseId], references: [id])
+  orderLine      OrderLine   @relation(fields: [orderLineId], references: [id])
+  inventoryUnit  InventoryUnit @relation(fields: [inventoryUnitId], references: [id])
+  ledgerEntries  SellerLedgerEntry[]
+  createdAt      DateTime    @default(now())
+
+  @@unique([returnCaseId, inventoryUnitId])
+  @@index([orderLineId])
+  @@index([inventoryUnitId])
 }
 
 model VendorReturn {
