@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { offers } from "@/lib/catalog";
 import { useCart } from "@/components/cart/cart-provider";
 
@@ -38,6 +38,8 @@ export default function CheckoutPage() {
   const [fields, setFields] = useState<CheckoutFields>(initialFields);
   const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFields, string>>>({});
   const [reviewReady, setReviewReady] = useState(false);
+  const [reviewRequest, setReviewRequest] = useState(0);
+  const reviewRef = useRef<HTMLElement | null>(null);
   const lines = items.flatMap((item) => {
     const offer = offers.find((candidate) => candidate.id === item.offerId);
     return offer ? [{ ...item, offer }] : [];
@@ -47,6 +49,12 @@ export default function CheckoutPage() {
     () => [fields.address, fields.city, fields.postalCode, fields.country].filter(Boolean).join(", "),
     [fields]
   );
+
+  useEffect(() => {
+    if (reviewReady) {
+      reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [reviewReady, reviewRequest]);
 
   function updateField(name: keyof CheckoutFields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -65,7 +73,9 @@ export default function CheckoutPage() {
     }
 
     setErrors(nextErrors);
-    setReviewReady(Object.keys(nextErrors).length === 0);
+    const isValid = Object.keys(nextErrors).length === 0;
+    setReviewReady(isValid);
+    if (isValid) setReviewRequest((current) => current + 1);
   }
 
   if (!lines.length) {
@@ -175,7 +185,7 @@ export default function CheckoutPage() {
         </aside>
       </div>
       {reviewReady ? (
-        <section className="panel orderReview" aria-live="polite">
+        <section className="panel orderReview" aria-live="polite" ref={reviewRef}>
           <p className="eyebrow">ORDER REVIEW</p>
           <h2>Review your order</h2>
           <div className="reviewGrid">
