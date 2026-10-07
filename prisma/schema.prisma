@@ -7,11 +7,42 @@ datasource db {
   url       = env("DATABASE_URL")
 }
 
-enum UserRole { CUSTOMER SELLER ADMIN }
-enum ListingStatus { DRAFT ACTIVE PAUSED SOLD_OUT ARCHIVED }
-enum InventoryStatus { AVAILABLE RESERVED SOLD RETURNED }
-enum Grade { REFURBISHED GRADE_A GRADE_B }
-enum OrderStatus { PENDING_PAYMENT PAID PROCESSING SHIPPED DELIVERED CANCELLED REFUNDED }
+enum UserRole {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  SOLD_OUT
+  ARCHIVED
+}
+
+enum InventoryStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  RETURNED
+}
+
+enum Grade {
+  REFURBISHED
+  GRADE_A
+  GRADE_B
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
 
 model User {
   id        String   @id @default(cuid())
