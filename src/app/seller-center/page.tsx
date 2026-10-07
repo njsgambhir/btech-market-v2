@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { getSellerSettlementSummary, refreshEligibleSellerCredits } from "@/lib/seller-payout-lifecycle";
+import { SellerFulfillmentControl } from "@/components/seller/seller-fulfillment-control";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,7 @@ export default async function SellerCenterPage() {
               Inventory: {line.inventory.map((unit) => unit.status.replaceAll("_", " ")).join(", ") || "Not assigned"}
               {line.order.trackingNumber ? ` · Tracking ${line.order.carrier ?? ""} ${line.order.trackingNumber}` : ""}
             </p>
+            {seller.status === "APPROVED" ? <SellerFulfillmentControl orderId={line.order.id} status={line.order.status} /> : null}
           </article>
         ))}
       </section>
