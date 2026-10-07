@@ -104,6 +104,15 @@ enum SellerPayoutStatus {
   CANCELLED
 }
 
+enum SellerSuborderStatus {
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -128,6 +137,7 @@ model Seller {
   vendorReturns VendorReturn[]
   payouts       SellerPayout[]
   payoutItems   SellerPayoutItem[]
+  suborders     SellerSuborder[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -217,6 +227,7 @@ model Order {
   customer    User @relation(fields: [customerId], references: [id])
   lines       OrderLine[]
   payments    Payment[]
+  sellerSuborders SellerSuborder[]
   returnStatus      ReturnStatus?
   returnRequestedAt DateTime?
   returnAuthorizedAt DateTime?
@@ -237,6 +248,30 @@ model OrderLine {
   inventory      InventoryUnit[]
   ledgerEntries  SellerLedgerEntry[]
   vendorReturns  VendorReturn[]
+  sellerSuborderId String?
+  sellerSuborder SellerSuborder? @relation(fields: [sellerSuborderId], references: [id])
+}
+
+model SellerSuborder {
+  id             String               @id @default(cuid())
+  orderId        String
+  sellerId       String
+  status         SellerSuborderStatus @default(PAID)
+  subtotalCents  Int
+  currency       String               @default("USD")
+  carrier        String?
+  trackingNumber String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  order          Order                @relation(fields: [orderId], references: [id])
+  seller         Seller               @relation(fields: [sellerId], references: [id])
+  lines          OrderLine[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([orderId, sellerId])
+  @@index([sellerId, status])
+  @@index([orderId])
 }
 
 
