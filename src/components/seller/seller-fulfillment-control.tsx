@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function SellerFulfillmentControl({ orderId, status }: { orderId: string; status: string }) {
+export function SellerFulfillmentControl({ suborderId, status }: { suborderId: string; status: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -18,7 +18,7 @@ export function SellerFulfillmentControl({ orderId, status }: { orderId: string;
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderId,
+          suborderId,
           action,
           ...(action === "shipped" ? { carrier, trackingNumber } : {}),
         }),
