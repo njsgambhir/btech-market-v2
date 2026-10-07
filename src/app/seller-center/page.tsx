@@ -36,14 +36,18 @@ export default async function SellerCenterPage() {
   await refreshEligibleSellerCredits();
   const settlement = await getSellerSettlementSummary(seller.id);
 
-  const orderLines = await db.orderLine.findMany({
-    where: { listing: { sellerId: seller.id } },
+  const suborders = await db.sellerSuborder.findMany({
+    where: { sellerId: seller.id },
     orderBy: { order: { createdAt: "desc" } },
     take: 20,
     include: {
       order: true,
-      listing: { include: { variant: { include: { model: true } } } },
-      inventory: { select: { status: true } },
+      lines: {
+        include: {
+          listing: { include: { variant: { include: { model: true } } } },
+          inventory: { select: { status: true } },
+        },
+      },
     },
   });
 
@@ -77,20 +81,22 @@ export default async function SellerCenterPage() {
 
       <section className="panel">
         <h2>Orders for your listings</h2>
-        {!orderLines.length ? <p>No seller orders yet.</p> : orderLines.map((line) => (
-          <article key={line.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
+        {!suborders.length ? <p>No seller suborders yet. New paid orders will appear here.</p> : suborders.map((suborder) => (
+          <article key={suborder.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
             <p>
-              <strong>Order # {line.order.id.slice(-8).toUpperCase()}</strong> · {line.order.status.replaceAll("_", " ")}
+              <strong>Order # {suborder.order.id.slice(-8).toUpperCase()}</strong> · {suborder.status.replaceAll("_", " ")} · {money.format(suborder.subtotalCents / 100)}
             </p>
-            <p>
-              {line.listing.variant.model.name} · {line.listing.variant.storage} · {line.listing.variant.color} ·
-              {" "}{money.format(line.unitPriceCents / 100)} × {line.quantity}
-            </p>
-            <p>
-              Inventory: {line.inventory.map((unit) => unit.status.replaceAll("_", " ")).join(", ") || "Not assigned"}
-              {line.order.trackingNumber ? ` · Tracking ${line.order.carrier ?? ""} ${line.order.trackingNumber}` : ""}
-            </p>
-            {seller.status === "APPROVED" ? <SellerFulfillmentControl orderId={line.order.id} status={line.order.status} /> : null}
+            {suborder.lines.map((line) => (
+              <div key={line.id}>
+                <p>
+                  {line.listing.variant.model.name} · {line.listing.variant.storage} · {line.listing.variant.color} ·
+                  {" "}{money.format(line.unitPriceCents / 100)} × {line.quantity}
+                </p>
+                <p>Inventory: {line.inventory.map((unit) => unit.status.replaceAll("_", " ")).join(", ") || "Not assigned"}</p>
+              </div>
+            ))}
+            {suborder.trackingNumber ? <p>Tracking: {suborder.carrier ?? ""} {suborder.trackingNumber}</p> : null}
+            {seller.status === "APPROVED" ? <SellerFulfillmentControl suborderId={suborder.id} status={suborder.status} /> : null}
           </article>
         ))}
       </section>
