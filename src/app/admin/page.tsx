@@ -95,7 +95,8 @@ export default async function AdminPage() {
   const money = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
 
   return (
@@ -222,7 +223,7 @@ export default async function AdminPage() {
           const available = listing.inventory.filter((unit) => unit.status === "AVAILABLE").length;
           return <article key={listing.id} style={{ borderTop: "1px solid #ddd", padding: "18px 0" }}>
             <p><strong>{listing.variant.model.name}</strong> · {listing.variant.storage} · {listing.variant.color}</p>
-            <p>{listing.seller.displayName} · {listing.status} · US${(listing.priceCents / 100).toLocaleString()}</p>
+            <p>{listing.seller.displayName} · {listing.status} · {money.format(listing.priceCents / 100)}</p>
             <p>{available} available · {listing.inventory.length} total inventory units</p>
             <ListingStatusControl listingId={listing.id} status={listing.status} />
             {process.env.VERCEL_ENV !== "production" && (
