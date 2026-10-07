@@ -148,6 +148,7 @@ export default async function AdminPage() {
               <div key={seller.id} style={{ padding: "16px 0", borderTop: "1px solid #e5e5e5" }}>
                 <p><strong>{seller.displayName}</strong> · {seller.status.replaceAll("_", " ")}</p>
                 <p>{seller.user.email} · {seller._count.listings} listings</p>
+                {process.env.VERCEL_ENV !== "production" ? <p><Link href={`/seller-center?seller=${seller.id}`}>Open Seller Center (Preview test)</Link></p> : null}
                 <SellerStatusControl sellerId={seller.id} status={seller.status} />
               </div>
             ))}
