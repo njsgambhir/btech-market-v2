@@ -13,12 +13,27 @@ const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-export default async function SellerCenterPage() {
+export default async function SellerCenterPage({ searchParams }: { searchParams: Promise<{ seller?: string }> }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/account");
-  if (session.user.role !== "SELLER") redirect("/account");
+  const params = await searchParams;
+  const adminPreview = session.user.role === "ADMIN" && process.env.VERCEL_ENV !== "production";
+  if (session.user.role !== "SELLER" && !adminPreview) redirect("/account");
 
-  const seller = await db.seller.findUnique({
+  const seller = adminPreview && params.seller
+    ? await db.seller.findUnique({
+        where: { id: params.seller },
+        include: {
+          listings: {
+            orderBy: { updatedAt: "desc" },
+            include: {
+              variant: { include: { model: true } },
+              inventory: { select: { status: true } },
+            },
+          },
+        },
+      })
+    : await db.seller.findUnique({
     where: { userId: session.user.id },
     include: {
       listings: {
@@ -59,6 +74,7 @@ export default async function SellerCenterPage() {
   return (
     <main className="section">
       <p className="eyebrow">BTECH SELLER CENTER</p>
+      {adminPreview ? <p><strong>Preview admin test mode.</strong> You are viewing this seller workspace without changing your account role.</p> : null}
       <h1 className="pageTitle">{seller.displayName}</h1>
       <p className="lede">
         Seller status: <strong>{seller.status.replaceAll("_", " ")}</strong>. Manage marketplace inventory,
