@@ -1,6 +1,5 @@
 import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -36,6 +35,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const { db } = await import("@/lib/db");
     await db.$queryRaw`SELECT 1`;
     return noStoreResponse({ ok: true, check: "SELECT_1" }, 200);
   } catch {
