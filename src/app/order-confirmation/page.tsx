@@ -23,6 +23,13 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
           inventory: true,
         },
       },
+      sellerSuborders: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          seller: { select: { displayName: true } },
+          lines: { include: { listing: { include: { variant: { include: { model: true } } } } } },
+        },
+      },
     },
   });
   if (!order) notFound();
@@ -65,6 +72,21 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
             <strong>{ "US$" + (order.totalCents / 100).toLocaleString() }</strong>
           </div>
         </div>
+        {order.sellerSuborders.length ? (
+          <section style={{ marginTop: "24px" }}>
+            <h3>Shipments</h3>
+            {order.sellerSuborders.map((suborder) => (
+              <div className="summaryCard" style={{ marginTop: "12px" }} key={suborder.id}>
+                <p><strong>{suborder.seller.displayName}</strong> · {suborder.status.replaceAll("_", " ")}</p>
+                {suborder.lines.map((line) => (
+                  <p key={line.id}>{line.listing.variant.model.name} · {line.listing.variant.storage} · {line.listing.variant.color} × {line.quantity}</p>
+                ))}
+                {suborder.trackingNumber ? <p>Tracking: {suborder.carrier ?? ""} {suborder.trackingNumber}</p> : null}
+                {suborder.status === "DELIVERED" && suborder.deliveredAt ? <p>Delivered {suborder.deliveredAt.toLocaleDateString()}</p> : null}
+              </div>
+            ))}
+          </section>
+        ) : null}
         {order.status === "PENDING_PAYMENT" && (session?.user?.id === order.customerId || isAdminTest) ? <TestPaymentButton orderId={order.id} /> : null}
         {order.status === "PAID" ? <p><strong>Payment received.</strong> Your order is confirmed and the device has been allocated to your order.</p> : null}
         {order.status === "PROCESSING" ? <p><strong>Processing.</strong> Your order is being prepared for shipment.</p> : null}
