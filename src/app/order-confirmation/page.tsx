@@ -76,12 +76,12 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
           <section style={{ marginTop: "24px" }}>
             <h3>Shipments</h3>
             {order.sellerSuborders.map((suborder) => (
-              <div style={{ marginTop: "8px", padding: "14px 20px", border: "1px solid #e5e7eb" }} key={suborder.id}>
-                <p style={{ margin: "0 0 8px" }}><strong>{suborder.seller.displayName}</strong> · {suborder.status.replaceAll("_", " ")}</p>
+              <div style={{ marginTop: "8px", padding: "18px 20px", border: "1px solid #e5e7eb", display: "grid", gap: "7px" }} key={suborder.id}>
+                <p style={{ margin: 0 }}><strong>{suborder.seller.displayName}</strong> · {suborder.status.replaceAll("_", " ")}</p>
                 {suborder.lines.map((line) => (
-                  <p style={{ margin: "0 0 8px" }} key={line.id}>{line.listing.variant.model.name} · {line.listing.variant.storage} · {line.listing.variant.color} × {line.quantity}</p>
+                  <p style={{ margin: 0 }} key={line.id}>{line.listing.variant.model.name} · {line.listing.variant.storage} · {line.listing.variant.color} × {line.quantity}</p>
                 ))}
-                {suborder.trackingNumber ? <p style={{ margin: "0 0 8px" }}>Tracking: {suborder.carrier ?? ""} {suborder.trackingNumber}</p> : null}
+                {suborder.trackingNumber ? <p style={{ margin: 0 }}>Tracking: {suborder.carrier ?? ""} {suborder.trackingNumber}</p> : null}
                 {suborder.status === "DELIVERED" && suborder.deliveredAt ? <p style={{ margin: 0 }}>Delivered {suborder.deliveredAt.toLocaleDateString()}</p> : null}
               </div>
             ))}
