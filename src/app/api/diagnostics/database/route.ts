@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     return noStoreResponse({ ok: false, error: "NOT_FOUND" }, 404);
   }
 
-  if (!tokenMatches(bearerToken(request), process.env.DATABASE_DIAGNOSTIC_TOKEN)) {
+  if (!tokenMatches(bearerToken(request), process.env.DATABASE_DIAGNOSTIC_TOKEN_V2)) {
     return noStoreResponse({ ok: false, error: "NOT_FOUND" }, 404);
   }
 
