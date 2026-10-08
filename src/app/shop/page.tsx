@@ -1,8 +1,29 @@
 import { offers } from "@/lib/catalog";
-
+import { db } from "@/lib/db";
 export default async function Shop({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const params = await searchParams;
-  const visible = params.category ? offers.filter((o) => o.category === params.category) : offers;
+  const availableListings = await db.sellerListing.findMany({
+  where: {
+    status: "ACTIVE",
+    inventory: {
+      some: { status: "AVAILABLE" },
+    },
+  },
+});
+  const inStockIds = new Set(availableListings.map((listing) => listing.id));
+const inStockOffers = offers.filter((offer) =>
+  inStockIds.has(
+    ({
+      "iPhone 15 Pro": "listing-iphone15pro",
+      "iPhone 14": "listing-iphone14",
+      "Galaxy S24": "listing-galaxys24",
+      "iPad Air": "listing-ipadair5",
+    } as Record<string, string>)[offer.model]
+  )
+);
+const visible = params.category
+  ? inStockOffers.filter((offer) => offer.category === params.category)
+  : inStockOffers;
 
   return (
     <main className="section">
