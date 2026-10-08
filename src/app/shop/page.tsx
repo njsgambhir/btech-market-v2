@@ -18,7 +18,7 @@ const inStockOffers = offers.filter((offer) =>
       "iPhone 15 Pro": "listing-iphone15pro",
       "iPhone 14": "listing-iphone14",
       "Galaxy S24": "listing-galaxys24",
-      "iPad Air": "listing-ipadair5",
+      "iPad Air (5th gen)": "listing-ipadair5",
     } as Record<string, string>)[offer.model]
   )
 );
