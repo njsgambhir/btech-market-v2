@@ -188,6 +188,16 @@ export default function CheckoutPage() {
         <section className="panel orderReview" aria-live="polite" ref={reviewRef}>
           <p className="eyebrow">ORDER REVIEW</p>
           <h2>Review your order</h2>
+          <button
+  type="button"
+  className="button secondary"
+  onClick={() => {
+    setReviewReady(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }}
+>
+  Edit details
+</button>
           <div className="reviewGrid">
             <div>
               <strong>Customer</strong>
