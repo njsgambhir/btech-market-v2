@@ -160,7 +160,7 @@ export default function CheckoutPage() {
             </label>
           </div>
           <label>Country
-            <select onChange={(event) => updateField("country", event.target.value)} value={fields.country}>
+            <select style={{ width: "100%", minHeight: "44px", padding: "10px 12px" }} onChange={(event) => updateField("country", event.target.value)} value={fields.country}>
               <option value="CA">Canada</option>
               <option value="US">United States</option>
             </select>
