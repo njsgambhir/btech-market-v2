@@ -11,6 +11,7 @@ export default async function Shop({ searchParams }: { searchParams: Promise<{ c
   },
 });
   const inStockIds = new Set(availableListings.map((listing) => listing.id));
+console.log("Available listing IDs:", [...inStockIds]);
 const inStockOffers = offers.filter((offer) =>
   inStockIds.has(
     ({
