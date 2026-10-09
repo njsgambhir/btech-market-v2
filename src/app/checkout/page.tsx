@@ -134,6 +134,12 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          shippingName: `${fields.firstName} ${fields.lastName}`.trim(),
+shippingEmail: fields.email,
+shippingAddress: fields.address,
+shippingCity: fields.city,
+shippingPostalCode: fields.postalCode,
+shippingCountry: fields.country,
           items: items.map(({ offerId, quantity }) => ({
             offerId,
             quantity,
