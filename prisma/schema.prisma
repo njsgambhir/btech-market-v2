@@ -157,3 +157,26 @@ model OrderLine {
   order Order @relation(fields: [orderId], references: [id])
   listing SellerListing @relation(fields: [listingId], references: [id])
 }
+
+
+model BuybackPrice {
+  id                    String   @id @default(cuid())
+  variantId             String
+  condition             String
+  batteryBand           String
+  currency              String   @default("CAD")
+  marketResalePriceCents Int
+  refurbishmentCostCents Int      @default(0)
+  logisticsCostCents     Int      @default(0)
+  targetMarginCents      Int      @default(0)
+  riskAllowanceCents     Int      @default(0)
+  maxPurchasePriceCents  Int
+  source                String   @default("INTERNAL")
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([variantId, condition, batteryBand, currency])
+  @@index([variantId])
+}
+
