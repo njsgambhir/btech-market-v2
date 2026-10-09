@@ -156,6 +156,13 @@ export async function POST(request: Request) {
         customerId: customer.id,
         status: "PENDING_PAYMENT",
         totalCents,
+            shippingName: body.shippingName,
+    shippingEmail: body.shippingEmail,
+    shippingAddress: body.shippingAddress,
+    shippingCity: body.shippingCity,
+    shippingPostalCode: body.shippingPostalCode,
+    shippingCountry: body.shippingCountry,
+    shippingPhone: body.shippingPhone,
         lines: { create: lines },
       },
       select: {
