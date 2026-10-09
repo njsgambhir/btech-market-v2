@@ -120,6 +120,15 @@ take: 20,
   .replaceAll("_", " ")
   .replace(/\b\w/g, (letter) => letter.toUpperCase())}</p>
             <p><strong>Total:</strong> ${(order.totalCents / 100).toFixed(2)}</p>
+          {order.lines.map((line) => (
+  <p key={line.id}>
+    <strong>Product:</strong> {line.listing.variant.model.name}
+    {" | "}
+    <strong>Quantity:</strong> {line.quantity}
+    {" | "}
+    <strong>Price:</strong> ${(line.unitPriceCents / 100).toFixed(2)}
+  </p>
+))}
             <hr />
           </div>
         ))}
