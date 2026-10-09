@@ -128,7 +128,7 @@ take: 20,
     <strong>Price:</strong> ${(line.unitPriceCents / 100).toFixed(2)}
   </p>
 ))}
-            <hr />
+            
           </div>
         ))}
       </div>
