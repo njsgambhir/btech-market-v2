@@ -208,10 +208,9 @@ shippingCountry: fields.country,
             ${(createdOrder.totalCents / 100).toFixed(2)}
           </p>
           <p className="finePrint">
-            This is not a confirmed purchase. Shipping, taxes,
-            inventory reservation and payment processing are not
-            connected yet. The delivery address has not been saved
-            to the order.
+            This is not a confirmed purchase. Your delivery details have been saved with this pending order.
+            Shipping charges,taxes,inventory reservation and payment processing are not connected yet.
+            
           </p>
         </section>
       ) : (
