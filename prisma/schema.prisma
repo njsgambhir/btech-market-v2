@@ -134,6 +134,14 @@ model Order {
   customerId String
   status OrderStatus @default(PENDING_PAYMENT)
   totalCents Int
+shippingName       String?
+shippingEmail      String?
+shippingAddress    String?
+shippingCity       String?
+shippingPostalCode String?
+shippingCountry    String?
+shippingPhone      String?
+
   customer User @relation(fields: [customerId], references: [id])
   lines OrderLine[]
   createdAt DateTime @default(now())
