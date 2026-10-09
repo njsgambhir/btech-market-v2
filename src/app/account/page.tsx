@@ -1,9 +1,21 @@
 
 import { auth, signIn, signOut } from "@/auth";
-
+import { db } from "@/lib/db";
 export default async function AccountPage() {
   const session = await auth();
-
+const orders = session?.user?.email
+  ? await db.order.findMany({
+      where: {
+        customer: {
+          email: session.user.email,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 20,
+    })
+  : [];
   return (
     <main className="section narrowPage">
       <p className="eyebrow">BTECH ACCOUNT</p>
@@ -61,6 +73,26 @@ export default async function AccountPage() {
           </p>
         </section>
       </div>
+      {session?.user && (
+  <section className="panel">
+    <h2>My Orders</h2>
+    {orders.length === 0 ? (
+      <p>You have no orders yet.</p>
+    ) : (
+      <div>
+        {orders.map((order) => (
+          <div key={order.id}>
+            <p><strong>Order:</strong> {order.id}</p>
+            <p><strong>Date:</strong> {order.createdAt.toLocaleDateString("en-CA")}</p>
+            <p><strong>Status:</strong> {order.status}</p>
+            <p><strong>Total:</strong> ${(order.totalCents / 100).toFixed(2)}</p>
+            <hr />
+          </div>
+        ))}
+      </div>
+    )}
+  </section>
+)}
     </main>
   );
 }
