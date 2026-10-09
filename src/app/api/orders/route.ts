@@ -1,19 +1,21 @@
+
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 export async function GET() {
   try {
-    await db.$queryRaw`SELECT 1`;
+    const count = await db.order.count();
 
     return NextResponse.json({
-      message: "Btech Market Orders API is connected to Neon",
+      message: "Orders database query successful",
       database: "connected",
+      orderCount: count,
     });
   } catch {
     return NextResponse.json(
       {
-        message: "Database connection failed",
-        database: "disconnected",
+        message: "Unable to retrieve orders",
+        database: "error",
       },
       { status: 503 }
     );
