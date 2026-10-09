@@ -81,7 +81,19 @@ const orders = session?.user?.email
     ) : (
       <div>
         {orders.map((order) => (
-          <div key={order.id}>
+        <div
+  key={order.id}
+  className="orderDetails"
+  style={{
+    padding: "12px 0",
+    borderBottom: "1px solid #e5e7eb",
+  }}
+>
+<style>{`
+  .orderDetails p {
+    margin: 4px 0;
+  }
+`}</style>
             <p><strong>Order:</strong> {order.id}</p>
             <p><strong>Date:</strong> {order.createdAt.toLocaleDateString("en-CA", {
   year: "numeric",
