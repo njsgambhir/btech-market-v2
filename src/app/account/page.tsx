@@ -88,7 +88,10 @@ const orders = session?.user?.email
   month: "long",
   day: "numeric",
 })}</p>
-            <p><strong>Status:</strong> {order.status.replaceAll("_", " ")}</p>
+            <p><strong>Status:</strong> {order.status
+  .toLowerCase()
+  .replaceAll("_", " ")
+  .replace(/\b\w/g, (letter) => letter.toUpperCase())}</p>
             <p><strong>Total:</strong> ${(order.totalCents / 100).toFixed(2)}</p>
             <hr />
           </div>
