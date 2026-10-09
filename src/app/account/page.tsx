@@ -11,9 +11,24 @@ const orders = session?.user?.email
         },
       },
       orderBy: {
-        createdAt: "desc",
+  createdAt: "desc",
+},
+include: {
+  lines: {
+    include: {
+      listing: {
+        include: {
+          variant: {
+            include: {
+              model: true,
+            },
+          },
+        },
       },
-      take: 20,
+    },
+  },
+},
+take: 20,
     })
   : [];
   return (
