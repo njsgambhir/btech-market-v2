@@ -83,8 +83,12 @@ const orders = session?.user?.email
         {orders.map((order) => (
           <div key={order.id}>
             <p><strong>Order:</strong> {order.id}</p>
-            <p><strong>Date:</strong> {order.createdAt.toLocaleDateString("en-CA")}</p>
-            <p><strong>Status:</strong> {order.status}</p>
+            <p><strong>Date:</strong> {order.createdAt.toLocaleDateString("en-CA", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+})}</p>
+            <p><strong>Status:</strong> {order.status.replaceAll("_", " ")}</p>
             <p><strong>Total:</strong> ${(order.totalCents / 100).toFixed(2)}</p>
             <hr />
           </div>
