@@ -1,21 +1,64 @@
-export default function AccountPage() {
+
+import { auth, signIn, signOut } from "@/auth";
+
+export default async function AccountPage() {
+  const session = await auth();
+
   return (
     <main className="section narrowPage">
       <p className="eyebrow">BTECH ACCOUNT</p>
-      <h1 className="pageTitle">Welcome back.</h1>
+      <h1 className="pageTitle">
+        {session?.user ? "My account" : "Welcome back."}
+      </h1>
+
       <div className="accountGrid">
         <section className="panel">
-          <h2>Sign in</h2>
-          <form className="checkoutForm">
-            <label>Email<input type="email" /></label>
-            <label>Password<input type="password" /></label>
-            <button className="buyButton" type="button">Sign in</button>
-          </form>
+          {session?.user ? (
+            <>
+              <h2>Signed in</h2>
+              <p>
+                Welcome, {session.user.name ?? session.user.email}
+              </p>
+              <p>Role: {session.user.role ?? "CUSTOMER"}</p>
+
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/account" });
+                }}
+              >
+                <button className="buyButton" type="submit">
+                  Sign out
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h2>Sign in</h2>
+              <p>Sign in securely using your GitHub account.</p>
+
+              <form
+                action={async () => {
+                  "use server";
+                  await signIn("github", {
+                    redirectTo: "/account",
+                  });
+                }}
+              >
+                <button className="buyButton" type="submit">
+                  Continue with GitHub
+                </button>
+              </form>
+            </>
+          )}
         </section>
+
         <section className="panel accountIntro">
-          <h2>New to Btech Market?</h2>
-          <p>Create an account to track orders, save delivery details, review purchases and manage trade-ins.</p>
-          <button className="button secondary" type="button">Create account</button>
+          <h2>Welcome to Btech Market</h2>
+          <p>
+            Manage your account, track orders, review purchases
+            and manage trade-ins.
+          </p>
         </section>
       </div>
     </main>
