@@ -100,15 +100,14 @@ take: 20,
   key={order.id}
   className="orderDetails"
   style={{
-    padding: "12px 0",
-    borderBottom: "1px solid #e5e7eb",
-  }}
+  padding: "20px 24px",
+  marginBottom: "16px",
+  border: "1px solid #e5e7eb",
+  borderRadius: "10px",
+  backgroundColor: "#ffffff",
+}}
 >
-<style>{`
-  .orderDetails p {
-    margin: 4px 0;
-  }
-`}</style>
+
             <p><strong>Order:</strong> {order.id}</p>
             <p><strong>Date:</strong> {order.createdAt.toLocaleDateString("en-CA", {
   year: "numeric",
