@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const basePrices: Record<string, number> = {
   "iPhone 15 Pro": 450,
@@ -16,8 +16,42 @@ export default function SellPage() {
   const [condition, setCondition] = useState("Good");
   const [battery, setBattery] = useState("85-89%");
   const [offer, setOffer] = useState<number | null>(null);
-
+const [apiPrices, setApiPrices] = useState<
+  { variantId: string; condition: string; batteryBand: string; currency: string; maxPurchasePriceCents: number }[]
+>([]);
+  useEffect(() => {
+  fetch("/api/valuation")
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to load valuations");
+      return response.json();
+    })
+    .then((data) => {
+      if (data.status === "ok" && Array.isArray(data.prices)) {
+        setApiPrices(data.prices);
+      }
+    })
+    .catch((error) => {
+      console.error("Valuation loading error:", error);
+    });
+}, []);
   function calculateOffer() {
+    const variantId =
+  model === "iPhone 15 Pro" && storage === "256GB"
+    ? "variant-iphone15pro"
+    : null;
+
+const matchedPrice = apiPrices.find(
+  (price) =>
+    price.variantId === variantId &&
+    price.condition === condition.toUpperCase() &&
+    price.batteryBand === battery.replace("%", "").replace("–", "-") &&
+    price.currency === "CAD"
+);
+
+if (matchedPrice) {
+  setOffer(matchedPrice.maxPurchasePriceCents / 100);
+  return;
+}
     const base = basePrices[model] ?? 0;
     const storageBonus =
       storage === "512GB" ? 60 : storage === "256GB" ? 30 : 0;
