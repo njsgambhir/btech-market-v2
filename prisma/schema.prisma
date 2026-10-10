@@ -180,3 +180,23 @@ model BuybackPrice {
   @@index([variantId])
 }
 
+model SellRequest {
+  id                 String   @id @default(cuid())
+  customerId         String
+  phoneModel         String
+  storage            String
+  condition          String
+  batteryBand        String
+  currency           String   @default("USD")
+  estimatedOfferCents Int
+  status             String   @default("PENDING")
+  refurbisherId      String?
+  agreedPriceCents   Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@index([refurbisherId])
+}
+
