@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
 
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: "Please sign in first." },
         { status: 401 }
@@ -39,10 +39,20 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+const customer = await db.user.findUnique({
+  where: { email: session.user.email },
+  select: { id: true },
+});
 
+if (!customer) {
+  return NextResponse.json(
+    { error: "Customer account not found." },
+    { status: 404 }
+  );
+}
     const sellRequest = await db.sellRequest.create({
       data: {
-        customerId: session.user.id,
+        customerId: customer.id,
         phoneModel,
         storage,
         condition,
